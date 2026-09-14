@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+:root {
+  --ivory: #f4efe6;
+  --ivory-soft: #faf7f1;
+  --espresso: #1c1410;
+  --charcoal: #3a342f;
+  --cognac: #8c5a32;
+  --cognac-soft: #c4a07a;
+  --brass: #b08d57;
+  --border: #d9d0c3;
+}
+
+@theme inline {
+  --color-ivory: var(--ivory);
+  --color-ivory-soft: var(--ivory-soft);
+  --color-espresso: var(--espresso);
+  --color-charcoal: var(--charcoal);
+  --color-cognac: var(--cognac);
+  --color-cognac-soft: var(--cognac-soft);
+  --color-brass: var(--brass);
+  --color-border: var(--border);
+  --font-serif: var(--font-cormorant);
+  --font-sans: var(--font-source-sans);
+  --font-mono: var(--font-ibm-plex);
+}
+
+html {
+  background: var(--ivory);
+}
+
+body {
+  background: var(--ivory);
+  color: var(--espresso);
+  font-family: var(--font-source-sans), "Source Sans 3", sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--cognac-soft) 55%, white);
+  color: var(--espresso);
+}
+
+.leather-plate {
+  background:
+    radial-gradient(120% 80% at 20% 0%, color-mix(in srgb, var(--cognac-soft) 35%, transparent), transparent 46%),
+    linear-gradient(160deg, #5c3a22 0%, #3a2418 48%, #2a1912 100%);
+}
+
+.brass-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--brass) 18%,
+    color-mix(in srgb, var(--brass) 55%, white) 50%,
+    var(--brass) 82%,
+    transparent
+  );
+}
