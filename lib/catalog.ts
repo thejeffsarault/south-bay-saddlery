@@ -66,6 +66,8 @@ export type PublicListing = {
   route: RouteId;
   summary: string;
   photoLabels: PhotoAngleId[];
+  photoSrcs?: Partial<Record<PhotoAngleId, string>>;
+  heroSrc?: string;
 };
 
 export type IntakeDraft = {

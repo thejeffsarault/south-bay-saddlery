@@ -39,7 +39,11 @@ export function DetailsView({ id }: { id: string }) {
       </p>
       <p className="text-charcoal">{listing.summary}</p>
 
-      <AngleGrid labels={listing.photoLabels} />
+      <AngleGrid
+        labels={listing.photoLabels}
+        photoSrcs={listing.photoSrcs}
+        altPrefix={listing.name}
+      />
 
       <dl className="grid gap-4 border-y border-border py-6 text-sm">
         <Fact label="Brand" value={listing.brand} />

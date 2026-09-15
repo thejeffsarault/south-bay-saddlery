@@ -8,7 +8,17 @@ export function SaddleCard({ listing }: { listing: PublicListing }) {
       href={`/collection/${listing.id}`}
       className="block border border-border bg-ivory-soft p-3 transition-colors hover:border-cognac"
     >
-      <LeatherPlate caption={listing.sku} className="aspect-[5/4] mb-3" />
+      {listing.heroSrc ? (
+        <div className="mb-3 aspect-[5/4] overflow-hidden bg-ivory-soft">
+          <img
+            src={listing.heroSrc}
+            alt={listing.name}
+            className="h-full w-full object-contain"
+          />
+        </div>
+      ) : (
+        <LeatherPlate caption={listing.sku} className="aspect-[5/4] mb-3" />
+      )}
       <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-cognac">
         {listing.program}
       </p>
