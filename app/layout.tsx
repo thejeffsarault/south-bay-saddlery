@@ -43,7 +43,7 @@ export default function RootLayout({
       >
         <StoreProvider>
           <SiteHeader />
-          <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-24 pt-8 sm:pb-16">
+          <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-32 pt-8 sm:pb-16">
             {children}
           </main>
           <SiteFooter />

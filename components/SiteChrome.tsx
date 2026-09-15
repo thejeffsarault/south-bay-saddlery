@@ -56,7 +56,7 @@ export function SiteFooter() {
 
 export function MobileDock() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-px border-t border-border bg-ivory-soft sm:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 gap-px border-t border-border bg-ivory-soft pb-[env(safe-area-inset-bottom)] sm:hidden">
       <Link
         href="/present"
         className="px-3 py-3 text-center text-[0.78rem] font-medium text-espresso"

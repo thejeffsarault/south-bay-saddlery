@@ -35,6 +35,15 @@ body {
   font-family: var(--font-source-sans), "Source Sans 3", sans-serif;
 }
 
+label,
+button,
+a,
+input,
+select,
+textarea {
+  scroll-margin-bottom: 6.5rem;
+}
+
 ::selection {
   background: color-mix(in srgb, var(--cognac-soft) 55%, white);
   color: var(--espresso);
