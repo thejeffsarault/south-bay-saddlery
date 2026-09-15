@@ -31,6 +31,7 @@ export const metadata: Metadata = {
     "Congress mobile MVP for pre-owned English saddles: Present Your Saddle, Explore the Collection, Details, and the founder queue.",
   icons: {
     icon: [
+      { url: "/favicon.ico" },
       { url: "/brand/SBS-favicon.ico" },
       { url: "/icon.png", type: "image/png" },
     ],

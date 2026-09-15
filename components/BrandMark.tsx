@@ -1,8 +1,8 @@
 /**
- * Interim PNG logos (SVG drop-in later, do not block):
- * - /brand/SBS-logo-black.png — header / light chrome
- * - /brand/SBS-logo-white.png — dark footer / nav
- * - /brand/SBS-favicon.ico or app/favicon.ico / app/icon.png
+ * Official SBS marks (vector preferred over PNG interim):
+ * - /brand/SBS-logo-black.svg — header / light chrome
+ * - /brand/SBS-logo-white.svg — dark footer / nav
+ * - /brand/SBS-favicon.ico and app/favicon.ico
  */
 export function BrandMark({
   inverted = false,
@@ -14,8 +14,8 @@ export function BrandMark({
   size?: "header" | "footer";
 }) {
   const src = inverted
-    ? "/brand/SBS-logo-white.png"
-    : "/brand/SBS-logo-black.png";
+    ? "/brand/SBS-logo-white.svg"
+    : "/brand/SBS-logo-black.svg";
   const imgClass =
     size === "footer"
       ? "h-12 w-auto max-w-[220px]"
