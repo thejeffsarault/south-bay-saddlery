@@ -79,8 +79,8 @@ export function VerifyUpsell({
       <p className="text-sm text-sbs-ink">
         Non-refundable. Separate $150 PaymentIntent — not the listing Checkout.
         SBS absorbs Stripe on this charge. Success queues an inbound FedEx
-        label seller → South Bay Saddlery (Santa Rosa Beach). Env can override
-        VERIFY_SHIP_TO_*.
+        label seller → South Bay Saddlery (Santa Rosa Beach). Receiving
+        9am–5pm (local). Ship/receive only — no drop-offs or visits.
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
         <button

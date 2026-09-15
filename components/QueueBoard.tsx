@@ -45,7 +45,7 @@ export function QueueBoard() {
         Approve, reject, or publish. Labels and checkout are automated — Jeff
         does not handle photo, support, or shipping work from this board.
         Buyer funds sit on the platform until close; C2C payouts use Connect
-        Express.
+        Express. Warehouse is ship/receive only — no buyer or seller visits.
       </p>
 
       <div className="flex flex-wrap gap-2">

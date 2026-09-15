@@ -15,6 +15,8 @@ export default function SellPage() {
       <p className="text-sbs-ink">
         Phone-first intake for a pre-owned English saddle. About five minutes.
         Nothing is live until a founder approves and publishes from the queue.
+        Verified saddles ship FedEx to SBS — ship/receive only, no drop-offs
+        or barn visits. Receiving 9am–5pm (local).
       </p>
       <SellForm />
     </div>

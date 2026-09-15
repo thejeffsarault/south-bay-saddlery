@@ -30,7 +30,7 @@ export function SiteFooter() {
     <footer className="mt-auto bg-sbs-black text-sbs-white">
       <div className="mx-auto flex max-w-3xl flex-col gap-2 px-4 py-8 text-sm text-sbs-white/80">
         <BrandMark inverted size="footer" />
-        <p>Pre-owned English saddles. Mobile-first Phase 1.</p>
+        <p>Pre-owned English saddles. Mobile-first Phase 1. Shipping and escrow only — no in-person visits.</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sbs-white">
           <Link href="/sell" className="underline-offset-4 hover:underline">
             Sell Your Saddle

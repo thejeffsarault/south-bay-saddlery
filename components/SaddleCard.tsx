@@ -35,6 +35,11 @@ export function SaddleCard({ listing }: { listing: PublicListing }) {
           selfServe={selfServe}
         />
       </div>
+      {listing.verified || listing.southBaySelect ? (
+        <p className="mt-2 text-xs text-sbs-muted">
+          Shipping / escrow only — no in-person visits
+        </p>
+      ) : null}
     </Link>
   );
 }

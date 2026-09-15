@@ -97,6 +97,7 @@ export function isPlatformOwnedListing(id: string) {
 
 export const BUYER_CHECKOUT_COPY = [
   "You are charged the listed price through Stripe. Tax is calculated at checkout.",
+  "This is shipping and escrow only — no in-person visits, walk-ins, or appointments.",
   "You have 3 days from delivery to keep or return the saddle.",
   "A return means you pay return shipping plus a separate $100 restocking fee.",
 ] as const;

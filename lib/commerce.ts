@@ -169,7 +169,19 @@ export const VERIFY_SHIP_TO_DEFAULTS = {
   city: "Santa Rosa Beach",
   state: "FL",
   zip: "32459",
-  hours: "Mon–Fri 9am–5pm CT",
+  hours: "9am–5pm (local)",
+} as const;
+
+/** Stables / warehouse: ship and receive only. Never invite a visit. */
+export const WAREHOUSE_POLICY = {
+  short: "Ship/receive only — no in-person visits.",
+  hours: "Receiving 9am–5pm (local).",
+  details:
+    "Shipping and escrow only. The warehouse is ship/receive only — no walk-ins, appointments, or barn visits.",
+  buyer:
+    "This saddle ships through Stripe escrow. Shipping only — no in-person visits, walk-ins, or appointments.",
+  seller:
+    "Ship by FedEx. Receiving is 9am–5pm (local). Ship/receive only — no drop-offs, walk-ins, or barn visits.",
 } as const;
 
 function envOrDefault(key: string, fallback: string) {

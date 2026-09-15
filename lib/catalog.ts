@@ -34,12 +34,12 @@ export const PATH_INTERESTS = [
   {
     id: "self-serve",
     label: "Self-serve",
-    hint: "You photograph, list, and ship to the buyer after sale. Labels are generated automatically.",
+    hint: "You photograph, list, and ship to the buyer after sale. Labels are generated automatically. Shipping only — no warehouse visits.",
   },
   {
     id: "verified",
     label: "Verified · $150",
-    hint: "Non-refundable $150. SBS absorbs Stripe on this charge. Success queues an inbound FedEx label seller → South Bay Saddlery (Santa Rosa Beach).",
+    hint: "Non-refundable $150. SBS absorbs Stripe. Inbound FedEx seller → South Bay Saddlery (Santa Rosa Beach), receiving 9am–5pm (local). Ship/receive only — no drop-offs or visits.",
   },
 ] as const;
 

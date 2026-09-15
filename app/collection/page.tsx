@@ -15,7 +15,8 @@ export default function CollectionPage() {
       <h1 className="font-serif text-4xl text-sbs-text">Collection</h1>
       <p className="text-sbs-ink">
         Published English listings only. Verified and South Bay Select badges
-        appear on founder-approved stock.
+        appear on founder-approved stock. Shipping and escrow only — not a
+        showroom. No walk-ins, appointments, or barn visits.
       </p>
       {!ready ? (
         <p className="text-sm text-sbs-muted">Opening the Collection…</p>

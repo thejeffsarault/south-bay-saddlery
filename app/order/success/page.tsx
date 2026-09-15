@@ -34,7 +34,8 @@ export default async function OrderSuccessPage({
         <p className="text-sbs-ink">
           The $150 verification fee is non-refundable. SBS absorbs Stripe on
           this charge. An inbound FedEx label seller → South Bay Saddlery
-          (Santa Rosa Beach) is queued.
+          (Santa Rosa Beach) is queued. Receiving 9am–5pm (local). Ship/receive
+          only — no drop-offs or visits.
         </p>
       ) : restock ? (
         <p className="text-sbs-ink">

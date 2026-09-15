@@ -24,13 +24,13 @@ export const PUBLISHED_LISTINGS: PublicListing[] = [
     includesCover: true,
     published: true,
     discipline: "English",
-    location: "South Bay",
+    location: "Ships via FedEx",
     serviceHistory: "Pre-owned; cover included. Founder-reviewed before publish.",
     route: "verified",
     platformOwned: true,
     payoutMode: "platform",
     summary:
-      "Pre-owned CWD SE01 in Excellent condition. Verified, South Bay Select, offered with cover.",
+      "Pre-owned CWD SE01 in Excellent condition. Verified, South Bay Select, offered with cover. Ships through escrow — not a showroom.",
     ...ji001Photos,
     // Cantle nameplate is founder-private. Never render MARISSA LEDFORD.
   },
@@ -56,13 +56,13 @@ export const PUBLISHED_LISTINGS: PublicListing[] = [
     includesCover: true,
     published: true,
     discipline: "English",
-    location: "South Bay",
+    location: "Ships via FedEx",
     serviceHistory: "Pre-owned; cover included.",
     route: "verified",
     platformOwned: true,
     payoutMode: "platform",
     summary:
-      "Pre-owned Voltaire Design Stuttgart in Excellent condition. Verified, South Bay Select, offered with cover.",
+      "Pre-owned Voltaire Design Stuttgart in Excellent condition. Verified, South Bay Select, offered with cover. Ships through escrow — not a showroom.",
     ...ji002Photos,
   },
 ];

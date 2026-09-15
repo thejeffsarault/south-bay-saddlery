@@ -15,7 +15,9 @@ export default function HomePage() {
         <p className="max-w-xl text-base leading-relaxed text-sbs-ink">
           South Bay Saddlery is a mobile-first marketplace for pre-owned
           English saddles. Photograph the required angles, send the facts, and
-          a founder reviews every listing before it goes live.
+          a founder reviews every listing before it goes live. Shipping and
+          escrow only — the warehouse is ship/receive, not a showroom. No
+          walk-ins or appointments.
         </p>
       </div>
       <div className="brass-rule" />

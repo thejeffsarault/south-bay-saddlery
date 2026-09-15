@@ -1,4 +1,5 @@
 import { formatUsdPrecise } from "@/lib/catalog";
+import { WAREHOUSE_POLICY } from "@/lib/commerce";
 import { SELLER_PAYOUT_COPY, WORKED_EXAMPLE } from "@/lib/payout";
 
 function Example() {
@@ -22,6 +23,7 @@ export function SellerTerms({ compact = false }: { compact?: boolean }) {
         {SELLER_PAYOUT_COPY.map((line) => (
           <li key={line}>{line}</li>
         ))}
+        <li>{WAREHOUSE_POLICY.seller}</li>
       </ul>
       <Example />
     </div>

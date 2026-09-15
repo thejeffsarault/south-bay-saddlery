@@ -3,6 +3,7 @@
 import { notFound } from "next/navigation";
 import { ListingBadges } from "@/components/Badges";
 import { BuyCta } from "@/components/BuyCta";
+import { WarehousePolicy } from "@/components/WarehousePolicy";
 import { AngleGrid } from "@/components/SaddleVisual";
 import { formatUsd, pathLabel } from "@/lib/catalog";
 import { getSeedListing } from "@/lib/inventory";
@@ -45,6 +46,7 @@ export function DetailsView({ id }: { id: string }) {
           southBaySelect={listing.southBaySelect}
           selfServe={listing.route === "self-serve"}
         />
+        <WarehousePolicy tone="details" />
       </header>
 
       <p className="text-sbs-ink">{listing.summary}</p>
@@ -69,7 +71,14 @@ export function DetailsView({ id }: { id: string }) {
         <Fact label="Condition" value={listing.condition} />
         <Fact label="Wear" value={listing.wear} />
         <Fact label="Service" value={listing.serviceHistory} />
-        <Fact label="Location" value={listing.location} />
+        <Fact
+          label="Fulfillment"
+          value={
+            listing.verified || listing.southBaySelect
+              ? "Shipping / escrow only — no in-person visits"
+              : `Seller ships from ${listing.location}. Shipping only — no warehouse visits.`
+          }
+        />
         <Fact label="Path" value={pathLabel(listing.route)} />
         <Fact label="Discipline" value={listing.discipline} />
       </dl>
