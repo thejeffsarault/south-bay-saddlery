@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { VERIFICATION_FEE_USD } from "@/lib/catalog";
+import { isPlatformOwnedListing } from "@/lib/payout";
 import { getSeedListing } from "@/lib/inventory";
 import { getStripe, siteOrigin, stripeConfigured } from "@/lib/stripe";
 
@@ -12,6 +12,7 @@ export async function POST(request: Request) {
     listingName?: string;
     submissionId?: string;
     price?: number;
+    sellerEmail?: string;
   } = {};
   try {
     body = (await request.json()) as typeof body;
@@ -19,12 +20,19 @@ export async function POST(request: Request) {
     body = {};
   }
 
+  if (body.kind === "verification") {
+    return NextResponse.json({
+      ok: false,
+      message: "Use /api/stripe/verification for the $150 Verification PaymentIntent.",
+    });
+  }
+
   if (!stripeConfigured() || !getStripe()) {
     return NextResponse.json({
       ok: false,
       setup: true,
       message:
-        "Checkout is in test setup. Add STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY. No live charge was created.",
+        "Checkout is in test setup. Add STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY. No live charge was created. Funds would be held on the platform — no seller transfer on charge.",
     });
   }
 
@@ -38,22 +46,13 @@ export async function POST(request: Request) {
   }
 
   const origin = siteOrigin(request);
-  const kind = body.kind === "verification" ? "verification" : "listing";
-
-  let name = "South Bay Saddlery";
-  let amount = 0;
-  let listingId = body.listingId || "";
-
-  if (kind === "verification") {
-    name = "Verified inspection";
-    amount = VERIFICATION_FEE_USD;
-    listingId = body.submissionId || "verification";
-  } else {
-    const seed = body.listingId ? getSeedListing(body.listingId) : undefined;
-    name = seed?.name || body.listingName || "Pre-owned English saddle";
-    amount = seed?.price || Number(body.price) || 0;
-    listingId = seed?.id || body.listingId || "";
-  }
+  const seed = body.listingId ? getSeedListing(body.listingId) : undefined;
+  const name = seed?.name || body.listingName || "Pre-owned English saddle";
+  const amount = seed?.price || Number(body.price) || 0;
+  const listingId = seed?.id || body.listingId || "";
+  const platformOwned = isPlatformOwnedListing(listingId);
+  const payoutMode = platformOwned ? "platform" : "connect";
+  const transferGroup = `sbs-${listingId || "listing"}-${Date.now().toString(36)}`;
 
   if (!amount || amount <= 0) {
     return NextResponse.json(
@@ -70,34 +69,54 @@ export async function POST(request: Request) {
           quantity: 1,
           price_data: {
             currency: "usd",
-            unit_amount: amount * 100,
-            product_data: { name },
+            unit_amount: Math.round(amount * 100),
+            product_data: {
+              name,
+              description:
+                "Charged in full to South Bay Saddlery. 3 days from delivery to keep or return. Return: you pay shipping + $100 restock.",
+            },
           },
         },
       ],
-      success_url: `${origin}/order/success?session_id={CHECKOUT_SESSION_ID}&kind=${kind}`,
-      cancel_url:
-        kind === "verification"
-          ? `${origin}/verify?submissionId=${encodeURIComponent(body.submissionId || "")}`
-          : `${origin}/collection/${encodeURIComponent(listingId)}`,
+      success_url: `${origin}/order/success?session_id={CHECKOUT_SESSION_ID}&kind=listing`,
+      cancel_url: `${origin}/collection/${encodeURIComponent(listingId)}`,
+      payment_intent_data: {
+        transfer_group: transferGroup,
+        metadata: {
+          kind: "listing",
+          listingId,
+          listingName: name,
+          payoutMode,
+          platformOwned: String(platformOwned),
+          holdOnPlatform: "true",
+          autoTransfer: "false",
+        },
+      },
       metadata: {
-        kind,
+        kind: "listing",
         listingId,
         listingName: name,
-        submissionId: body.submissionId || "",
+        payoutMode,
+        platformOwned: String(platformOwned),
+        transferGroup,
+        sellerEmail: body.sellerEmail || seed?.sellerEmail || "",
       },
     });
 
-    return NextResponse.json({ ok: true, url: session.url, id: session.id });
+    return NextResponse.json({
+      ok: true,
+      url: session.url,
+      id: session.id,
+      transferGroup,
+      payoutMode,
+      holdOnPlatform: true,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Checkout failed.";
-    return NextResponse.json(
-      {
-        ok: false,
-        setup: true,
-        message: `Checkout is in test setup. ${message}`,
-      },
-      { status: 200 },
-    );
+    return NextResponse.json({
+      ok: false,
+      setup: true,
+      message: `Checkout is in test setup. ${message}`,
+    });
   }
 }

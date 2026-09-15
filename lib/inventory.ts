@@ -27,6 +27,8 @@ export const PUBLISHED_LISTINGS: PublicListing[] = [
     location: "South Bay",
     serviceHistory: "Pre-owned; cover included. Founder-reviewed before publish.",
     route: "verified",
+    platformOwned: true,
+    payoutMode: "platform",
     summary:
       "Pre-owned CWD SE01 in Excellent condition. Verified, South Bay Select, offered with cover.",
     ...ji001Photos,
@@ -57,6 +59,8 @@ export const PUBLISHED_LISTINGS: PublicListing[] = [
     location: "South Bay",
     serviceHistory: "Pre-owned; cover included.",
     route: "verified",
+    platformOwned: true,
+    payoutMode: "platform",
     summary:
       "Pre-owned Voltaire Design Stuttgart in Excellent condition. Verified, South Bay Select, offered with cover.",
     ...ji002Photos,

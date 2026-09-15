@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ESCROW_TERMS } from "@/lib/commerce";
+import { BUYER_CHECKOUT_COPY } from "@/lib/payout";
 import { formatUsd } from "@/lib/catalog";
 import { findOrderBySession } from "@/lib/server-store";
 
@@ -16,34 +16,42 @@ export default async function OrderSuccessPage({
   const { session_id, kind } = await searchParams;
   const order = session_id ? await findOrderBySession(session_id) : undefined;
   const verification = kind === "verification" || order?.kind === "verification";
+  const restock = kind === "restock" || order?.kind === "restock";
 
   return (
     <div className="space-y-5">
       <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
-        {verification ? "Verification" : "Escrow"}
+        {verification ? "Verification" : restock ? "Restock" : "Escrow"}
       </p>
       <h1 className="font-serif text-4xl text-sbs-text">
-        {verification ? "Verification received" : "Funds held"}
+        {verification
+          ? "Verification received"
+          : restock
+            ? "Restocking fee"
+            : "Funds held on the platform"}
       </h1>
       {verification ? (
         <p className="text-sbs-ink">
-          The $150 verification fee is non-refundable. A FedEx label to Jeff is
-          queued. This is not a support ticket.
+          The $150 verification fee is non-refundable. SBS absorbs Stripe on
+          this charge. An inbound FedEx label seller → warehouse is queued. If
+          VERIFY_SHIP_TO_* is empty, the job stays queued.
+        </p>
+      ) : restock ? (
+        <p className="text-sbs-ink">
+          Separate $100 restocking fee. The reversed listing sale does not take
+          a 12% success fee. You pay return shipping.
         </p>
       ) : (
         <div className="space-y-3 text-sbs-ink">
           <p>
             {order
-              ? `${order.listingName} · ${formatUsd(order.amount)} · status ${order.status}.`
-              : "Checkout completed. The order is held in escrow once the Stripe webhook lands."}
+              ? `${order.listingName} · ${formatUsd(order.amount)} · status ${order.status}. Held on the platform — not transferred to the seller.`
+              : "Checkout completed. The charge sits on the platform account until close. No seller transfer on charge."}
           </p>
           <ul className="list-disc space-y-1 pl-5 text-sm">
-            <li>
-              {ESCROW_TERMS.returnWindowDays}-day return window from receipt
-            </li>
-            <li>{formatUsd(ESCROW_TERMS.restockFeeUsd)} restocking fee</li>
-            <li>Seller payout {ESCROW_TERMS.sellerPayout}</li>
-            <li>{ESCROW_TERMS.successFeePercent}% success fee on close</li>
+            {BUYER_CHECKOUT_COPY.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
           </ul>
         </div>
       )}

@@ -12,6 +12,7 @@ import {
   type IntakeDraft,
   type PhotoAngleId,
 } from "@/lib/catalog";
+import { SellerTerms } from "@/components/SellerTerms";
 import { fileToThumb } from "@/lib/photos";
 import { emptyDraft, useStore } from "@/lib/store";
 
@@ -102,7 +103,7 @@ export function SellForm() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            kind: "seller_to_jeff",
+            kind: "seller_to_warehouse",
             submissionId: submission.id,
           }),
         });
@@ -359,6 +360,7 @@ export function SellForm() {
             </label>
           ))}
         </div>
+        <SellerTerms compact />
       </Section>
 
       <Section index="10" title="Photos">

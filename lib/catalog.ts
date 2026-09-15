@@ -35,7 +35,7 @@ export const PATH_INTERESTS = [
   {
     id: "verified",
     label: "Verified · $150",
-    hint: "Non-refundable. A FedEx label to Jeff is queued so the saddle can be inspected. Not a support ticket — checkout and the label are automated.",
+    hint: "Non-refundable $150. SBS absorbs Stripe on this charge. Success queues an inbound FedEx label seller → warehouse.",
   },
 ] as const;
 
@@ -89,6 +89,10 @@ export type PublicListing = {
   photoLabels: string[];
   photoSrcs?: Record<string, string>;
   heroSrc?: string;
+  platformOwned: boolean;
+  payoutMode: "platform" | "connect";
+  sellerEmail?: string;
+  connectAccountId?: string;
 };
 
 export type PhotoThumb = { name: string; thumb: string };
@@ -156,6 +160,15 @@ export function formatUsd(value: number) {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
+  }).format(value);
+}
+
+export function formatUsdPrecise(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(value);
 }
 

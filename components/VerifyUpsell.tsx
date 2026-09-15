@@ -18,13 +18,10 @@ export function VerifyUpsell({
     setBusy("pay");
     setMessage("");
     try {
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch("/api/stripe/verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind: "verification",
-          submissionId,
-        }),
+        body: JSON.stringify({ submissionId }),
       });
       const data = (await res.json()) as {
         url?: string;
@@ -37,7 +34,7 @@ export function VerifyUpsell({
       }
       setMessage(
         data.message ||
-          "Verification checkout is in test setup. The $150 path is stubbed until Stripe keys are set.",
+          "Verification checkout is in test setup. The $150 PaymentIntent is stubbed until Stripe keys are set. SBS absorbs Stripe on this charge.",
       );
     } catch {
       setMessage("Verification checkout is in test setup.");
@@ -54,16 +51,16 @@ export function VerifyUpsell({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          kind: "seller_to_jeff",
+          kind: "seller_to_warehouse",
           submissionId,
         }),
       });
       const data = (await res.json()) as {
-        job?: { id: string };
+        job?: { id: string; message?: string };
         message?: string;
       };
       if (data.job?.id) setLabelId(data.job.id);
-      setMessage(data.message || "label queued");
+      setMessage(data.message || data.job?.message || "label queued");
     } catch {
       setMessage("Label could not be queued.");
     } finally {
@@ -80,8 +77,10 @@ export function VerifyUpsell({
         Verified path · {formatUsd(VERIFICATION_FEE_USD)}
       </h2>
       <p className="text-sm text-sbs-ink">
-        Non-refundable. This is not a support ticket for Jeff. Checkout and the
-        FedEx label to Jeff are automated (or stubbed when env is missing).
+        Non-refundable. Separate $150 PaymentIntent — not the listing Checkout.
+        SBS absorbs Stripe on this charge. Success queues an inbound FedEx
+        label seller → warehouse. If VERIFY_SHIP_TO_* is empty, the job stays
+        queued.
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
         <button
@@ -100,7 +99,7 @@ export function VerifyUpsell({
           disabled={Boolean(busy)}
           className="border border-sbs-border px-4 py-3 text-sm text-sbs-text disabled:opacity-60"
         >
-          {busy === "label" ? "Queuing…" : "FedEx label to Jeff"}
+          {busy === "label" ? "Queuing…" : "FedEx label to warehouse"}
         </button>
       </div>
       {labelId ? (

@@ -14,8 +14,9 @@ export default function QueuePage() {
       <h1 className="font-serif text-4xl text-sbs-text">Queue</h1>
       <p className="text-sbs-ink">
         Pending, approve, reject, publish. After approve and publish, the
-        saddle enters the Collection. Notify Jeff via Andy/Kai — never from a
-        direct Jeff inbox in this app.
+        saddle enters the Collection. The Finance tab is the ledger for
+        Checkout holds, Connect, payouts, and returns. Notify Jeff via Andy/Kai
+        — never from a direct Jeff inbox in this app.
       </p>
       <QueueBoard />
     </div>

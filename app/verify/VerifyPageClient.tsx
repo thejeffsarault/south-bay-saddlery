@@ -11,8 +11,9 @@ export function VerifyPageClient({ submissionId }: { submissionId?: string }) {
       </p>
       <h1 className="font-serif text-4xl text-sbs-text">Verified path</h1>
       <p className="text-sbs-ink">
-        $150 non-refundable. A FedEx label to Jeff is queued automatically.
-        Jeff does not see a support or shipping task.
+        $150 non-refundable. Separate PaymentIntent — SBS absorbs Stripe.
+        Success queues an inbound FedEx label seller → warehouse. Jeff does
+        not see a support or shipping task.
       </p>
       {submissionId ? (
         <VerifyUpsell submissionId={submissionId} />

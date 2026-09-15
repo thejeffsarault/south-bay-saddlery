@@ -10,6 +10,8 @@ import {
   photoCount,
   type QueueStatus,
 } from "@/lib/catalog";
+import { SellerTerms } from "@/components/SellerTerms";
+import { FinanceTab } from "@/components/FinanceTab";
 import { useStore } from "@/lib/store";
 
 const fieldClass =
@@ -26,6 +28,7 @@ export function QueueBoard() {
   } = useStore();
   const [notice, setNotice] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<QueueStatus | "all">("all");
+  const [view, setView] = useState<"listings" | "finance">("listings");
 
   const visible = useMemo(() => {
     if (filter === "all") return submissions;
@@ -41,8 +44,28 @@ export function QueueBoard() {
       <p className="text-sm text-sbs-ink">
         Approve, reject, or publish. Labels and checkout are automated — Jeff
         does not handle photo, support, or shipping work from this board.
+        Buyer funds sit on the platform until close; C2C payouts use Connect
+        Express.
       </p>
 
+      <div className="flex flex-wrap gap-2">
+        <FilterChip
+          active={view === "listings"}
+          onClick={() => setView("listings")}
+          label="Listings"
+        />
+        <FilterChip
+          active={view === "finance"}
+          onClick={() => setView("finance")}
+          label="Finance"
+        />
+      </div>
+
+      {view === "finance" ? <FinanceTab /> : null}
+
+      {view === "listings" ? (
+      <div className="space-y-6">
+      <SellerTerms compact />
       <div className="flex flex-wrap gap-2">
         <FilterChip
           active={filter === "all"}
@@ -232,9 +255,39 @@ export function QueueBoard() {
             {notice[item.id] ? (
               <p className="mt-2 text-sm text-sbs-ink">{notice[item.id]}</p>
             ) : null}
+            {item.publishedListingId ? (
+              <button
+                type="button"
+                className="mt-2 w-full border border-sbs-border px-4 py-3 text-sm"
+                onClick={async () => {
+                  const res = await fetch("/api/stripe/connect", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      email: item.email,
+                      listingId: item.publishedListingId,
+                      submissionId: item.id,
+                    }),
+                  });
+                  const data = (await res.json()) as {
+                    url?: string;
+                    message?: string;
+                  };
+                  if (data.url) window.location.href = data.url;
+                  setNotice((current) => ({
+                    ...current,
+                    [item.id]: data.message || "Connect Express onboarding recorded.",
+                  }));
+                }}
+              >
+                Connect Express (C2C payouts)
+              </button>
+            ) : null}
           </article>
         );
       })}
+      </div>
+      ) : null}
     </div>
   );
 }

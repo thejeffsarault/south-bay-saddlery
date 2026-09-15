@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createLabelJob, type LabelKind } from "@/lib/commerce";
+import { createLabelJob, normalizeLabelKind, type LabelKind } from "@/lib/commerce";
 import { listLabels, saveLabel } from "@/lib/server-store";
 
 export const runtime = "nodejs";
@@ -22,12 +22,9 @@ export async function POST(request: Request) {
     body = {};
   }
 
-  const kind: LabelKind =
-    body.kind === "seller_to_jeff" ? "seller_to_jeff" : "seller_to_buyer";
-
   const job = await saveLabel(
     createLabelJob({
-      kind,
+      kind: normalizeLabelKind(body.kind),
       listingId: body.listingId,
       submissionId: body.submissionId,
       orderId: body.orderId,

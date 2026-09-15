@@ -1,6 +1,11 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
-import type { LabelJob, Order } from "./commerce";
+import type {
+  ConnectAccount,
+  FinanceEvent,
+  LabelJob,
+  Order,
+} from "./commerce";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
 
@@ -18,9 +23,17 @@ type Persisted = {
   orders: Order[];
   labels: LabelJob[];
   notifications: NotifyRecord[];
+  finance: FinanceEvent[];
+  connect: ConnectAccount[];
 };
 
-const empty: Persisted = { orders: [], labels: [], notifications: [] };
+const empty: Persisted = {
+  orders: [],
+  labels: [],
+  notifications: [],
+  finance: [],
+  connect: [],
+};
 
 async function ensureDir() {
   await mkdir(DATA_DIR, { recursive: true });
@@ -55,14 +68,42 @@ export async function saveOrder(order: Order) {
     const existing = orders.find((item) => item.stripeSessionId === order.stripeSessionId);
     if (existing) return existing;
   }
+  if (order.stripePaymentIntentId) {
+    const existing = orders.find(
+      (item) => item.stripePaymentIntentId === order.stripePaymentIntentId,
+    );
+    if (existing) return existing;
+  }
   const next = [order, ...orders];
   await writeList("orders", next);
   return order;
 }
 
+export async function updateOrder(id: string, patch: Partial<Order>) {
+  const orders = await listOrders();
+  const next = orders.map((order) => (order.id === id ? { ...order, ...patch } : order));
+  await writeList("orders", next);
+  return next.find((order) => order.id === id);
+}
+
+export async function findOrderById(id: string) {
+  const orders = await listOrders();
+  return orders.find((order) => order.id === id);
+}
+
 export async function findOrderBySession(sessionId: string) {
   const orders = await listOrders();
   return orders.find((order) => order.stripeSessionId === sessionId);
+}
+
+export async function findOrderByPaymentIntent(paymentIntentId: string) {
+  const orders = await listOrders();
+  return orders.find((order) => order.stripePaymentIntentId === paymentIntentId);
+}
+
+export async function findOrderByTransferGroup(transferGroup: string) {
+  const orders = await listOrders();
+  return orders.find((order) => order.transferGroup === transferGroup);
 }
 
 export async function listLabels() {
@@ -85,6 +126,40 @@ export async function saveNotification(record: NotifyRecord) {
   const next = [record, ...notifications];
   await writeList("notifications", next);
   return record;
+}
+
+export async function listFinance() {
+  return readList("finance");
+}
+
+export async function saveFinanceEvent(event: FinanceEvent) {
+  const finance = await listFinance();
+  if (event.stripeId) {
+    const existing = finance.find((item) => item.stripeId === event.stripeId);
+    if (existing) return existing;
+  }
+  const next = [event, ...finance];
+  await writeList("finance", next);
+  return event;
+}
+
+export async function listConnect() {
+  return readList("connect");
+}
+
+export async function saveConnectAccount(account: ConnectAccount) {
+  const connect = await listConnect();
+  const next = [
+    account,
+    ...connect.filter((item) => item.id !== account.id && item.email !== account.email),
+  ];
+  await writeList("connect", next);
+  return account;
+}
+
+export async function findConnectByEmail(email: string) {
+  const connect = await listConnect();
+  return connect.find((item) => item.email.toLowerCase() === email.toLowerCase());
 }
 
 export type { NotifyRecord };

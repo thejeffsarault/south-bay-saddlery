@@ -5,17 +5,28 @@ Mobile-first Next.js app for pre-owned English saddles.
 - **Sell Your Saddle** — `/sell` (`/present` redirects here)
 - **Collection** — `/collection`
 - **Details** — `/collection/[id]` with Verified + South Bay Select badges and Stripe buy
-- **Founder queue** — `/queue` (pending / approve / reject / publish). Alias: `/admin/approvals`
-- **Verification** — `/verify` ($150 non-refundable + FedEx label to Jeff)
+- **Founder queue** — `/queue` listings + **Finance** tab. Alias: `/admin/approvals`
+- **Verification** — `/verify` ($150 PaymentIntent + inbound FedEx seller → warehouse)
 
 English only. No Congress mode. Jeff does not see support, photo, or shipping work — labels and checkout are automated or stubbed behind env.
 
-Seed inventory (both published, Verified + South Bay Select):
+Seed inventory (both published, Verified + South Bay Select, **platform-owned** — no Connect):
 
 - **JI-001** CWD SE01 17.5" 2024 · serial 114716 · $4690 · photos at `/listings/ji-001/`
 - **JI-002** Voltaire Design Stuttgart 18.5" 2019 · serial 1386 · flap 3AAAR · $3850 · photos at `/listings/ji-002/`
 
 Do not merge leftover PR #1 (generic storefront scaffold).
+
+## Stripe / escrow (CFO lock)
+
+1. Platform Stripe account receives buyer Checkout. **No auto-transfer** to the seller on charge. Funds are held until close + a 7–10 business day payout window.
+2. **Connect Express** is for C2C sellers who receive payouts. JI-001 / JI-002 skip Connect — funds stay on the platform.
+3. Payout job: **net = list − 12% − Stripe processing** (seller eats 2.9% + $0.30). Transfer only after close. Worked example $4690: Stripe ≈ $136.31, SBS 12% = $562.80, seller net ≈ $3990.89.
+4. Separate **$150 Verification** Checkout/PaymentIntent (product: SBS Verification). SBS absorbs Stripe on that charge. Success creates an inbound FedEx label job seller → warehouse.
+5. Webhooks write a finance log (`.data/finance.json` + `/queue` Finance tab): `payment_intent.succeeded`, `charge.refunded`, `checkout.session.completed`, Connect `account.updated`, `transfer.paid` / `transfer.failed` (plus `transfer.created` / `reversed`).
+6. Buyer copy: charged total via Stripe; 3 days from delivery to keep/return; return = buyer pays ship + $100 restock.
+   Seller copy: 12% of list; card processing deducted from payout; payout 7–10 biz days after close.
+7. **$100 restock** is a separate charge on the return path. No 12% on a reversed sale.
 
 ## Local
 
@@ -31,15 +42,16 @@ Development: `npm run dev` (http://localhost:3000).
 
 | Variable | Required for live charges / labels |
 | --- | --- |
-| `STRIPE_SECRET_KEY` | Stripe Checkout |
+| `STRIPE_SECRET_KEY` | Stripe Checkout, Verification PI, Transfers |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Buy CTA live path |
 | `STRIPE_WEBHOOK_SECRET` | `/api/stripe/webhook` |
 | `FEDEX_API_KEY` / `FEDEX_CLIENT_ID` / `FEDEX_ACCOUNT_NUMBER` / `FEDEX_METER_NUMBER` | Live FedEx (optional; stub returns `label queued`) |
+| `VERIFY_SHIP_TO_NAME` / `STREET` / `CITY` / `STATE` / `ZIP` | Warehouse inbound address. If empty, the label job stays queued. |
 | `NOTIFY_WEBHOOK_URL` | POST when a Sell Your Saddle submit lands (Andy/Kai). No direct Jeff email from code. |
 
-If Stripe keys are missing, Details still shows a Buy CTA that explains checkout is in test setup. No crash. No fake live money.
+If Stripe keys are missing, Details still shows a Buy CTA that explains checkout is in test setup. No crash. No fake live money. Finance actions still write the ledger as stubs.
 
-Escrow model after successful checkout: funds held (`status: escrow`), 3-day return from receipt, $100 restock, seller payout 7–10 business days after close, 12% success fee. Blue Book wholesale is never shown.
+Blue Book wholesale is never shown.
 
 ## Vercel
 

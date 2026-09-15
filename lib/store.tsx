@@ -200,6 +200,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         location: item.location,
         serviceHistory: item.serviceHistory,
         route: (item.pathInterest || "self-serve") as PathInterestId,
+        platformOwned: false,
+        payoutMode: "connect",
+        sellerEmail: item.email,
         summary: `Pre-owned ${listingName(item)}.`,
         photoLabels: INTAKE_ANGLES.map((angle) => angle.id).filter(
           (angle) => item.photos[angle],
