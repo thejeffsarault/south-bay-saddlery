@@ -1,13 +1,14 @@
 # South Bay Saddlery — Congress MVP
 
-Mobile Next.js app for pre-owned English saddles.
+Mobile Next.js app for **pre-owned English saddles**. This is not a generic `/products` or `/contact` inquiry storefront.
 
 - **Present Your Saddle** — `/present`
 - **Explore the Collection** — `/collection`
-- **Details** — `/collection/[id]` (H1 is the saddle name). Published CWD: `/collection/ji-001`
+- **Details** — `/collection/[id]` (H1 is the saddle name, never “Dossier”). Published CWD: `/collection/ji-001`
 - **Founder queue** — `/queue` (Jeff price / route / publish). Alias: `/admin/approvals`
+- **Consultation stub** — `/consultation` (Home + Details CTA)
 
-No payments, messaging, or Western inventory in this slice.
+No payments, messaging, Western inventory, or product-grid storefront in this slice. `/products` and `/contact` redirect into the Collection and consultation stub.
 
 ## Local
 
