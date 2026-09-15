@@ -4,11 +4,12 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CONDITIONS,
+  BODY_ANGLES,
   INTAKE_ANGLES,
-  MIN_PHOTOS,
+  MIN_BODY_PHOTOS,
   PATH_INTERESTS,
+  bodyPhotoCount,
   hasRequiredPhotos,
-  photoCount,
   type IntakeDraft,
   type PhotoAngleId,
 } from "@/lib/catalog";
@@ -48,7 +49,7 @@ export function SellForm() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const photosReady = photoCount(draft.photos);
+  const bodyReady = bodyPhotoCount(draft.photos);
   const canSubmit = useMemo(() => {
     return (
       draft.contactName &&
@@ -90,7 +91,7 @@ export function SellForm() {
     setError("");
     if (!canSubmit) {
       setError(
-        `Complete contact, saddle facts, serial, and at least ${MIN_PHOTOS} photos including the serial photo.`,
+        `Complete contact, saddle facts, at least ${MIN_BODY_PHOTOS} of panels / flaps / underflaps / billets / front / back, and a mandatory serial/stamp photo.`,
       );
       return;
     }
@@ -365,12 +366,12 @@ export function SellForm() {
 
       <Section index="10" title="Photos">
         <p className="text-sm text-sbs-ink">
-          At least {MIN_PHOTOS} photos. Serial is required. Include panels,
-          flaps, underflaps, billets, front, back, and damage if any.
+          At least {MIN_BODY_PHOTOS} of {BODY_ANGLES.map((a) => a.label.toLowerCase()).join(", ")}.
+          Serial / stamp photo is mandatory. Damage if any.
         </p>
         <p className="font-mono text-xs text-sbs-muted">
-          {photosReady} / {INTAKE_ANGLES.length} attached
-          {draft.photos.serial?.thumb ? " · serial on file" : " · serial needed"}
+          {bodyReady} / {BODY_ANGLES.length} body
+          {draft.photos.serial?.thumb ? " · serial/stamp on file" : " · serial/stamp needed"}
         </p>
         <div className="grid grid-cols-2 gap-2">
           {INTAKE_ANGLES.map((angle) => {

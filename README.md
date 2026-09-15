@@ -21,7 +21,7 @@ Do not merge leftover PR #1 (generic storefront scaffold).
 
 1. Platform Stripe account receives buyer Checkout. **No auto-transfer** to the seller on charge. Funds are held until close + a 7–10 business day payout window.
 2. **Connect Express** is for C2C sellers who receive payouts. JI-001 / JI-002 skip Connect — funds stay on the platform.
-3. Payout job: **net = list − 12% − Stripe processing** (seller eats 2.9% + $0.30). Transfer only after close. Worked example $4690: Stripe ≈ $136.31, SBS 12% = $562.80, seller net ≈ $3990.89.
+3. Payout job: **net = list − 12%(list) − Stripe(PI amount)**. Stripe fee uses the full PaymentIntent (list + shipping + tax). 12% stays on item list only. Seller eats processing. Transfer only after close. Returned/refunded: skip 12% and skip Transfer; $100 restock is a separate buyer charge. Worked example $4690: Stripe ≈ $136.31, SBS 12% = $562.80, seller net ≈ $3990.89.
 4. Separate **$150 Verification** Checkout/PaymentIntent (product: SBS Verification). SBS absorbs Stripe on that charge. Success creates an inbound FedEx label job seller → warehouse.
 5. Webhooks write a finance log (`.data/finance.json` + `/queue` Finance tab): `payment_intent.succeeded`, `charge.refunded`, `checkout.session.completed`, Connect `account.updated`, `transfer.paid` / `transfer.failed` (plus `transfer.created` / `reversed`).
 6. Buyer copy: charged total via Stripe; 3 days from delivery to keep/return; return = buyer pays ship + $100 restock.

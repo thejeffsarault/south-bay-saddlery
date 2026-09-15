@@ -44,6 +44,8 @@ export type Order = {
   listingId: string;
   listingName: string;
   amount: number;
+  listAmount?: number;
+  chargedAmount?: number;
   status: OrderStatus;
   createdAt: string;
   deliveredAt?: string;
@@ -92,6 +94,8 @@ export function createEscrowOrder(input: {
   listingId: string;
   listingName: string;
   amount: number;
+  listAmount?: number;
+  chargedAmount?: number;
   stripeSessionId?: string;
   stripePaymentIntentId?: string;
   transferGroup?: string;
@@ -106,11 +110,15 @@ export function createEscrowOrder(input: {
     input.platformOwned ?? isPlatformOwnedListing(input.listingId);
   const payoutMode =
     input.payoutMode ?? (platformOwned || kind !== "listing" ? "platform" : "connect");
+  const listAmount = input.listAmount ?? input.amount;
+  const chargedAmount = input.chargedAmount ?? input.amount;
   return {
     id: newId("ord"),
     listingId: input.listingId,
     listingName: input.listingName,
     amount: input.amount,
+    listAmount,
+    chargedAmount,
     status: kind === "verification" || kind === "restock" ? "paid" : "escrow",
     createdAt: new Date().toISOString(),
     stripeSessionId: input.stripeSessionId,
@@ -121,7 +129,8 @@ export function createEscrowOrder(input: {
     platformOwned: kind === "listing" ? platformOwned : true,
     connectAccountId: input.connectAccountId,
     sellerEmail: input.sellerEmail,
-    breakdown: kind === "listing" ? computePayout(input.amount) : undefined,
+    breakdown:
+      kind === "listing" ? computePayout(listAmount, chargedAmount) : undefined,
     terms: {
       ...ESCROW_TERMS,
       holdOnPlatform: true,

@@ -6,7 +6,7 @@ import {
   newId,
 } from "@/lib/commerce";
 import { logFinance } from "@/lib/finance";
-import { isPlatformOwnedListing } from "@/lib/payout";
+import { computePayout, isPlatformOwnedListing } from "@/lib/payout";
 import {
   findConnectByEmail,
   findOrderByPaymentIntent,
@@ -28,7 +28,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       : session.metadata?.kind === "restock"
         ? "restock"
         : "listing";
-  const amount = (session.amount_total ?? 0) / 100;
+  const chargedAmount = (session.amount_total ?? 0) / 100;
+  const listAmount = Number(session.metadata?.listAmount) || chargedAmount;
   const listingId = session.metadata?.listingId || "";
   const paymentIntentId =
     typeof session.payment_intent === "string"
@@ -36,13 +37,26 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       : session.payment_intent?.id;
 
   const existing = session.id ? await findOrderBySession(session.id) : undefined;
+  if (existing && kind === "listing") {
+    const breakdown = computePayout(
+      existing.listAmount || listAmount,
+      chargedAmount,
+    );
+    await updateOrder(existing.id, {
+      chargedAmount,
+      listAmount: existing.listAmount || listAmount,
+      breakdown,
+    });
+  }
   const order =
     existing ||
     (await saveOrder(
       createEscrowOrder({
         listingId,
         listingName: session.metadata?.listingName || "South Bay Saddlery",
-        amount,
+        amount: chargedAmount,
+        listAmount,
+        chargedAmount,
         stripeSessionId: session.id,
         stripePaymentIntentId: paymentIntentId,
         transferGroup: session.metadata?.transferGroup,
@@ -61,7 +75,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     stripeId: session.id,
     orderId: order.id,
     listingId,
-    amount,
+    amount: chargedAmount,
     status: order.status,
     detail:
       kind === "verification"
@@ -131,7 +145,15 @@ export async function POST(request: Request) {
       const intent = event.data.object as Stripe.PaymentIntent;
       const kind = intent.metadata?.kind || "listing";
       const amount = (intent.amount_received || intent.amount) / 100;
+      const listAmount = Number(intent.metadata?.listAmount) || amount;
       let order = intent.id ? await findOrderByPaymentIntent(intent.id) : undefined;
+      if (order && kind === "listing") {
+        await updateOrder(order.id, {
+          chargedAmount: amount,
+          listAmount: order.listAmount || listAmount,
+          breakdown: computePayout(order.listAmount || listAmount, amount),
+        });
+      }
       if (!order && kind === "verification") {
         order = await saveOrder(
           createEscrowOrder({

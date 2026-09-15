@@ -16,39 +16,47 @@ export function centsToUsd(cents: number) {
   return cents / 100;
 }
 
-export function estimateStripeFeeUsd(listUsd: number) {
-  const cents = usdToCents(listUsd);
+/** Stripe fee is always on the PaymentIntent / full charge (list + shipping + tax). */
+export function estimateStripeFeeUsd(chargedAmountUsd: number) {
+  const cents = usdToCents(chargedAmountUsd);
   return centsToUsd(Math.round(cents * STRIPE_PERCENT) + usdToCents(STRIPE_FIXED_USD));
 }
 
+/** 12% success fee stays on item list only — never on shipping or tax. */
 export function sbsFeeUsd(listUsd: number) {
   return centsToUsd(Math.round(usdToCents(listUsd) * (SBS_SUCCESS_FEE_PERCENT / 100)));
 }
 
-export function sellerNetUsd(listUsd: number) {
+export function sellerNetUsd(listUsd: number, chargedAmountUsd = listUsd) {
   return centsToUsd(
     usdToCents(listUsd) -
-      usdToCents(estimateStripeFeeUsd(listUsd)) -
+      usdToCents(estimateStripeFeeUsd(chargedAmountUsd)) -
       usdToCents(sbsFeeUsd(listUsd)),
   );
 }
 
 export type PayoutBreakdown = {
   list: number;
+  charged: number;
   stripeProcessing: number;
   sbsFee: number;
   sellerNet: number;
 };
 
-export function computePayout(listUsd: number): PayoutBreakdown {
-  const stripeProcessing = estimateStripeFeeUsd(listUsd);
+export function computePayout(
+  listUsd: number,
+  chargedAmountUsd = listUsd,
+): PayoutBreakdown {
+  const charged = chargedAmountUsd;
+  const stripeProcessing = estimateStripeFeeUsd(charged);
   const sbsFee = sbsFeeUsd(listUsd);
   return {
     list: listUsd,
+    charged,
     stripeProcessing,
     sbsFee,
     sellerNet: centsToUsd(
-      usdToCents(listUsd) - usdToCents(stripeProcessing) - usdToCents(sbsFee),
+      usdToCents(listUsd) - usdToCents(sbsFee) - usdToCents(stripeProcessing),
     ),
   };
 }
@@ -94,7 +102,7 @@ export const BUYER_CHECKOUT_COPY = [
 ] as const;
 
 export const SELLER_PAYOUT_COPY = [
-  "South Bay Saddlery keeps 12% of the list price.",
-  "Card processing is deducted from your payout — you eat the Stripe fee.",
-  "Payout is 7–10 business days after close, by Transfer to your Connect Express account. Founder Select inventory (JI-001, JI-002) stays on the platform — no Connect transfer.",
+  "South Bay Saddlery keeps 12% of the item list price (not shipping or tax).",
+  "Card processing is calculated on the full Stripe charge and deducted from your payout — you eat the Stripe fee.",
+  "Payout is 7–10 business days after close, by Transfer to your Connect Express account. Founder Select inventory (JI-001, JI-002) stays on the platform — no Connect transfer. A return skips 12% and skips Transfer; restock is a separate $100 buyer charge.",
 ] as const;

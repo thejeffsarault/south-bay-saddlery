@@ -1,23 +1,18 @@
 export function ListingBadges({
   verified,
   southBaySelect,
+  selfServe,
 }: {
   verified?: boolean;
   southBaySelect?: boolean;
+  selfServe?: boolean;
 }) {
+  if (selfServe) return null;
   if (!verified && !southBaySelect) return null;
   return (
-    <div className="flex flex-wrap gap-2">
-      {verified ? <Badge>Verified</Badge> : null}
-      {southBaySelect ? <Badge>South Bay Select</Badge> : null}
+    <div className="sbs-badge-row">
+      {verified ? <span className="sbs-badge">Verified</span> : null}
+      {southBaySelect ? <span className="sbs-badge">South Bay Select</span> : null}
     </div>
-  );
-}
-
-function Badge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="border border-sbs-black px-2 py-0.5 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-sbs-text">
-      {children}
-    </span>
   );
 }

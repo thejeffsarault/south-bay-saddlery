@@ -193,7 +193,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         wear: item.wear,
         price,
         verified: item.pathInterest === "verified",
-        southBaySelect: item.southBaySelect,
+        southBaySelect:
+          item.pathInterest === "verified" ? item.southBaySelect : false,
         includesCover: false,
         published: true,
         discipline: "English",

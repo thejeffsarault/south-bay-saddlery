@@ -1,11 +1,15 @@
-export const INTAKE_ANGLES = [
+export const BODY_ANGLES = [
   { id: "panels", label: "Panels", required: true },
   { id: "flaps", label: "Flaps", required: true },
   { id: "underflaps", label: "Underflaps", required: true },
   { id: "billets", label: "Billets", required: true },
   { id: "front", label: "Front", required: true },
   { id: "back", label: "Back", required: true },
-  { id: "serial", label: "Serial", required: true },
+] as const;
+
+export const INTAKE_ANGLES = [
+  ...BODY_ANGLES,
+  { id: "serial", label: "Serial / stamp", required: true },
   { id: "damage", label: "Damage (if any)", required: false },
 ] as const;
 
@@ -132,6 +136,7 @@ export type QueueSubmission = IntakeDraft & {
   rejectedReason: string;
 };
 
+export const MIN_BODY_PHOTOS = 6;
 export const MIN_PHOTOS = 6;
 export const VERIFICATION_FEE_USD = 150;
 
@@ -139,8 +144,14 @@ export function photoCount(photos: IntakeDraft["photos"]) {
   return INTAKE_ANGLES.filter((angle) => photos[angle.id]?.thumb).length;
 }
 
+export function bodyPhotoCount(photos: IntakeDraft["photos"]) {
+  return BODY_ANGLES.filter((angle) => photos[angle.id]?.thumb).length;
+}
+
 export function hasRequiredPhotos(photos: IntakeDraft["photos"]) {
-  return Boolean(photos.serial?.thumb) && photoCount(photos) >= MIN_PHOTOS;
+  return (
+    Boolean(photos.serial?.thumb) && bodyPhotoCount(photos) >= MIN_BODY_PHOTOS
+  );
 }
 
 export function listingName(input: {

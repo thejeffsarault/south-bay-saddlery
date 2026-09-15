@@ -13,6 +13,8 @@ export async function POST(request: Request) {
     submissionId?: string;
     price?: number;
     sellerEmail?: string;
+    shippingUsd?: number;
+    taxUsd?: number;
   } = {};
   try {
     body = (await request.json()) as typeof body;
@@ -48,13 +50,15 @@ export async function POST(request: Request) {
   const origin = siteOrigin(request);
   const seed = body.listingId ? getSeedListing(body.listingId) : undefined;
   const name = seed?.name || body.listingName || "Pre-owned English saddle";
-  const amount = seed?.price || Number(body.price) || 0;
+  const listAmount = seed?.price || Number(body.price) || 0;
+  const shippingUsd = Math.max(0, Number(body.shippingUsd) || 0);
+  const taxUsd = Math.max(0, Number(body.taxUsd) || 0);
   const listingId = seed?.id || body.listingId || "";
   const platformOwned = isPlatformOwnedListing(listingId);
   const payoutMode = platformOwned ? "platform" : "connect";
   const transferGroup = `sbs-${listingId || "listing"}-${Date.now().toString(36)}`;
 
-  if (!amount || amount <= 0) {
+  if (!listAmount || listAmount <= 0) {
     return NextResponse.json(
       { ok: false, message: "Listing price is not available for checkout." },
       { status: 400 },
@@ -69,7 +73,7 @@ export async function POST(request: Request) {
           quantity: 1,
           price_data: {
             currency: "usd",
-            unit_amount: Math.round(amount * 100),
+            unit_amount: Math.round(listAmount * 100),
             product_data: {
               name,
               description:
@@ -77,6 +81,30 @@ export async function POST(request: Request) {
             },
           },
         },
+        ...(shippingUsd
+          ? [
+              {
+                quantity: 1,
+                price_data: {
+                  currency: "usd" as const,
+                  unit_amount: Math.round(shippingUsd * 100),
+                  product_data: { name: "Shipping" },
+                },
+              },
+            ]
+          : []),
+        ...(taxUsd
+          ? [
+              {
+                quantity: 1,
+                price_data: {
+                  currency: "usd" as const,
+                  unit_amount: Math.round(taxUsd * 100),
+                  product_data: { name: "Tax" },
+                },
+              },
+            ]
+          : []),
       ],
       success_url: `${origin}/order/success?session_id={CHECKOUT_SESSION_ID}&kind=listing`,
       cancel_url: `${origin}/collection/${encodeURIComponent(listingId)}`,
@@ -90,6 +118,7 @@ export async function POST(request: Request) {
           platformOwned: String(platformOwned),
           holdOnPlatform: "true",
           autoTransfer: "false",
+          listAmount: String(listAmount),
         },
       },
       metadata: {
@@ -100,6 +129,9 @@ export async function POST(request: Request) {
         platformOwned: String(platformOwned),
         transferGroup,
         sellerEmail: body.sellerEmail || seed?.sellerEmail || "",
+        listAmount: String(listAmount),
+        shippingUsd: String(shippingUsd),
+        taxUsd: String(taxUsd),
       },
     });
 

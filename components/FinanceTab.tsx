@@ -60,8 +60,10 @@ export function FinanceTab() {
           Payout math
         </p>
         <p className="text-sm text-sbs-ink">
-          Net = list − 12% − Stripe processing (2.9% + $0.30). Seller eats
-          processing. No auto-transfer on charge.
+          Stripe fee is 2.9% + $0.30 on the PaymentIntent amount (full charge,
+          including shipping/tax). 12% success fee stays on item list only.
+          Returned/refunded orders skip 12% and skip Transfer — $100 restock is
+          a separate buyer charge.
         </p>
         <p className="text-sm text-sbs-text">
           ${data.workedExample.list.toLocaleString()} list → Stripe ≈{" "}

@@ -31,9 +31,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "Listing order not found." }, { status: 404 });
   }
   if (order.status === "refunded" || order.status === "returned") {
+    await logFinance({
+      type: "payout.skipped",
+      orderId: order.id,
+      listingId: order.listingId,
+      amount: 0,
+      status: order.status,
+      detail:
+        "Returned/refunded — skip 12% and skip Transfer. $100 restock is a separate charge to the buyer.",
+    });
     return NextResponse.json({
-      ok: false,
-      message: "No payout on a reversed sale. No 12% is taken.",
+      ok: true,
+      skipped: true,
+      transferred: false,
+      successFee: 0,
+      message:
+        "Returned/refunded — skip 12% and skip Transfer. $100 restock is a separate charge to the buyer.",
     });
   }
   if (order.status === "escrow" || order.status === "delivered") {

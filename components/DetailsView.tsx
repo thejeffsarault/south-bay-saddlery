@@ -26,10 +26,6 @@ export function DetailsView({ id }: { id: string }) {
         Details
       </p>
       <header className="space-y-3">
-        <ListingBadges
-          verified={listing.verified}
-          southBaySelect={listing.southBaySelect}
-        />
         <h1 className="font-serif text-4xl leading-tight text-sbs-text">
           {listing.name}
         </h1>
@@ -37,11 +33,20 @@ export function DetailsView({ id }: { id: string }) {
           {listing.sku}
           {listing.includesCover ? " · with cover" : ""}
         </p>
+        <p className="font-mono text-2xl text-sbs-text">
+          {formatUsd(listing.price)}
+        </p>
+        <p className="text-sm text-sbs-ink">
+          {listing.condition}
+          {listing.includesCover ? " · with cover" : ""}
+        </p>
+        <ListingBadges
+          verified={listing.verified}
+          southBaySelect={listing.southBaySelect}
+          selfServe={listing.route === "self-serve"}
+        />
       </header>
 
-      <p className="font-mono text-2xl text-sbs-text">
-        {formatUsd(listing.price)}
-      </p>
       <p className="text-sbs-ink">{listing.summary}</p>
 
       <AngleGrid
