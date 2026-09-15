@@ -25,6 +25,19 @@ export const PUBLISHED_LISTINGS: PublicListing[] = [
     route: "verified",
     summary:
       "Pre-owned CWD SE01 in Excellent condition. South Bay Select, offered with cover.",
+    heroSrc: "/listings/ji-001/01-near-side.jpeg",
+    photoSrcs: {
+      "near-side": "/listings/ji-001/01-near-side.jpeg",
+      "off-side": "/listings/ji-001/02-off-side.jpeg",
+      seat: "/listings/ji-001/03-seat-top.jpeg",
+      front: "/listings/ji-001/04-front.jpeg",
+      rear: "/listings/ji-001/05-rear.jpeg",
+      flaps: "/listings/ji-001/06-left-under-flap.jpeg",
+      billets: "/listings/ji-001/07-right-under-flap.jpeg",
+      panels: "/listings/ji-001/08-panels-underside.jpeg",
+      stamps: "/listings/ji-001/09-stamps.jpeg",
+      damage: "/listings/ji-001/10-saddle-cover.jpeg",
+    },
     photoLabels: [
       "near-side",
       "off-side",
@@ -35,6 +48,7 @@ export const PUBLISHED_LISTINGS: PublicListing[] = [
       "billets",
       "panels",
       "stamps",
+      "damage",
     ],
     // Cantle nameplate is founder-private and is never rendered on Details.
   },
