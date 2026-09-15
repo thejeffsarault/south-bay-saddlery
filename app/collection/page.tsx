@@ -12,11 +12,10 @@ export default function CollectionPage() {
       <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
         Pre-owned English
       </p>
-      <h1 className="font-serif text-4xl text-sbs-text">
-        Explore the Collection
-      </h1>
+      <h1 className="font-serif text-4xl text-sbs-text">Collection</h1>
       <p className="text-sbs-ink">
-        Published English listings only. Details open on the saddle name.
+        Published English listings only. Verified and South Bay Select badges
+        appear on founder-approved stock.
       </p>
       {!ready ? (
         <p className="text-sm text-sbs-muted">Opening the Collection…</p>

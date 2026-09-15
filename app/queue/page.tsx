@@ -13,8 +13,9 @@ export default function QueuePage() {
       </p>
       <h1 className="font-serif text-4xl text-sbs-text">Queue</h1>
       <p className="text-sbs-ink">
-        Jeff price, route, then publish. Nothing enters Explore the Collection
-        until those three gates are set.
+        Pending, approve, reject, publish. After approve and publish, the
+        saddle enters the Collection. Notify Jeff via Andy/Kai — never from a
+        direct Jeff inbox in this app.
       </p>
       <QueueBoard />
     </div>

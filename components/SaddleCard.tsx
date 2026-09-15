@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatUsd, type PublicListing } from "@/lib/catalog";
-import { LeatherPlate } from "./SaddleVisual";
+import { ListingBadges } from "./Badges";
+import { ListingPhoto } from "./ListingPhoto";
 
 export function SaddleCard({ listing }: { listing: PublicListing }) {
   return (
@@ -8,21 +9,17 @@ export function SaddleCard({ listing }: { listing: PublicListing }) {
       href={`/collection/${listing.id}`}
       className="block border border-sbs-border bg-sbs-surface p-3 transition-colors hover:border-sbs-black"
     >
-      {listing.heroSrc ? (
-        <div className="mb-3 aspect-[5/4] overflow-hidden bg-sbs-surface">
-          <img
-            src={listing.heroSrc}
-            alt={listing.name}
-            className="h-full w-full object-contain"
-          />
-        </div>
-      ) : (
-        <LeatherPlate caption={listing.sku} className="aspect-[5/4] mb-3" />
-      )}
-      <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-sbs-muted">
-        {listing.program}
-      </p>
-      <h2 className="mt-1 font-serif text-[1.45rem] leading-tight text-sbs-text">
+      <ListingPhoto
+        src={listing.heroSrc}
+        alt={listing.name}
+        caption={listing.sku}
+        className="mb-3 aspect-[5/4]"
+      />
+      <ListingBadges
+        verified={listing.verified}
+        southBaySelect={listing.southBaySelect}
+      />
+      <h2 className="mt-2 font-serif text-[1.45rem] leading-tight text-sbs-text">
         {listing.name}
       </h2>
       <p className="mt-2 text-sm text-sbs-ink">

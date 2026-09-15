@@ -4,11 +4,13 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CONDITIONS,
+  INTAKE_ANGLES,
   MIN_PHOTOS,
   PATH_INTERESTS,
-  PHOTO_ANGLES,
+  hasRequiredPhotos,
   photoCount,
   type IntakeDraft,
+  type PhotoAngleId,
 } from "@/lib/catalog";
 import { fileToThumb } from "@/lib/photos";
 import { emptyDraft, useStore } from "@/lib/store";
@@ -38,9 +40,9 @@ function Section({
   );
 }
 
-export function PresentForm() {
+export function SellForm() {
   const router = useRouter();
-  const { submitIntake } = useStore();
+  const { submitIntake, notifyJeff } = useStore();
   const [draft, setDraft] = useState<IntakeDraft>(emptyDraft);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -59,20 +61,21 @@ export function PresentForm() {
       draft.flap &&
       draft.tree &&
       draft.stamps &&
+      draft.serial &&
       draft.condition &&
       draft.wear &&
       draft.serviceHistory &&
       draft.priceExpectation &&
       draft.pathInterest &&
-      photosReady >= MIN_PHOTOS
+      hasRequiredPhotos(draft.photos)
     );
-  }, [draft, photosReady]);
+  }, [draft]);
 
   function update<K extends keyof IntakeDraft>(key: K, value: IntakeDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
-  async function onPhoto(angleId: (typeof PHOTO_ANGLES)[number]["id"], file?: File) {
+  async function onPhoto(angleId: PhotoAngleId, file?: File) {
     if (!file) return;
     const thumb = await fileToThumb(file);
     setDraft((current) => ({
@@ -81,18 +84,37 @@ export function PresentForm() {
     }));
   }
 
-  function onSubmit(event: React.FormEvent) {
+  async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
     if (!canSubmit) {
       setError(
-        `Complete contact, saddle facts, and at least ${MIN_PHOTOS} photo angles.`,
+        `Complete contact, saddle facts, serial, and at least ${MIN_PHOTOS} photos including the serial photo.`,
       );
       return;
     }
     setBusy(true);
-    submitIntake(draft);
-    router.push("/present/received");
+    const submission = submitIntake(draft);
+    try {
+      await notifyJeff(submission.id);
+      if (draft.pathInterest === "verified") {
+        await fetch("/api/labels/fedex", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "seller_to_jeff",
+            submissionId: submission.id,
+          }),
+        });
+      }
+    } catch {
+      // Queue still holds the pending listing if notify/label stubs fail.
+    }
+    router.push(
+      `/sell/received?id=${encodeURIComponent(submission.id)}&path=${encodeURIComponent(
+        draft.pathInterest || "self-serve",
+      )}`,
+    );
   }
 
   return (
@@ -230,10 +252,21 @@ export function PresentForm() {
         </div>
       </Section>
 
-      <Section index="05" title="Stamps">
+      <Section index="05" title="Stamps / serial">
         <label className="block space-y-1">
           <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-            Serial and flap stamps
+            Serial
+          </span>
+          <input
+            className={fieldClass}
+            value={draft.serial}
+            onChange={(e) => update("serial", e.target.value)}
+            required
+          />
+        </label>
+        <label className="block space-y-1">
+          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
+            Stamps
           </span>
           <textarea
             className={`${fieldClass} min-h-24`}
@@ -242,6 +275,9 @@ export function PresentForm() {
             required
           />
         </label>
+        <p className="text-sm text-sbs-ink">
+          A serial photo is required in the photo set below.
+        </p>
       </Section>
 
       <Section index="06" title="Condition + wear">
@@ -278,7 +314,7 @@ export function PresentForm() {
         </label>
       </Section>
 
-      <Section index="07" title="Service history">
+      <Section index="07" title="Service">
         <textarea
           className={`${fieldClass} min-h-24`}
           value={draft.serviceHistory}
@@ -298,8 +334,8 @@ export function PresentForm() {
         />
       </Section>
 
-      <Section index="09" title="Path interest">
-        <div className="grid grid-cols-2 gap-2">
+      <Section index="09" title="Path">
+        <div className="grid gap-2">
           {PATH_INTERESTS.map((path) => (
             <label
               key={path.id}
@@ -318,7 +354,8 @@ export function PresentForm() {
                 onChange={() => update("pathInterest", path.id)}
                 required
               />
-              {path.label}
+              <span className="block font-medium">{path.label}</span>
+              <span className="mt-1 block text-sbs-ink">{path.hint}</span>
             </label>
           ))}
         </div>
@@ -326,14 +363,15 @@ export function PresentForm() {
 
       <Section index="10" title="Photos">
         <p className="text-sm text-sbs-ink">
-          At least {MIN_PHOTOS} angles. Near-side, off-side, seat, front, rear,
-          flaps, billets, panels, stamps, and damage.
+          At least {MIN_PHOTOS} photos. Serial is required. Include panels,
+          flaps, underflaps, billets, front, back, and damage if any.
         </p>
         <p className="font-mono text-xs text-sbs-muted">
-          {photosReady} / {PHOTO_ANGLES.length} attached
+          {photosReady} / {INTAKE_ANGLES.length} attached
+          {draft.photos.serial?.thumb ? " · serial on file" : " · serial needed"}
         </p>
         <div className="grid grid-cols-2 gap-2">
-          {PHOTO_ANGLES.map((angle) => {
+          {INTAKE_ANGLES.map((angle) => {
             const current = draft.photos[angle.id];
             return (
               <label
@@ -350,6 +388,7 @@ export function PresentForm() {
                 ) : (
                   <span className="absolute inset-0 flex items-end p-2 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                     {angle.label}
+                    {angle.required ? " · required" : ""}
                   </span>
                 )}
                 <input
@@ -372,7 +411,7 @@ export function PresentForm() {
         disabled={busy}
         className="w-full bg-sbs-accent px-5 py-3.5 text-sm tracking-wide text-sbs-on-accent disabled:opacity-60"
       >
-        {busy ? "Sending…" : "Present Your Saddle"}
+        {busy ? "Sending…" : "Sell Your Saddle"}
       </button>
     </form>
   );

@@ -1,24 +1,42 @@
-export const PHOTO_ANGLES = [
-  { id: "near-side", label: "Near-side" },
-  { id: "off-side", label: "Off-side" },
-  { id: "seat", label: "Seat" },
-  { id: "front", label: "Front" },
-  { id: "rear", label: "Rear" },
-  { id: "flaps", label: "Flaps" },
-  { id: "billets", label: "Billets" },
-  { id: "panels", label: "Panels" },
-  { id: "stamps", label: "Stamps" },
-  { id: "damage", label: "Damage" },
+export const INTAKE_ANGLES = [
+  { id: "panels", label: "Panels", required: true },
+  { id: "flaps", label: "Flaps", required: true },
+  { id: "underflaps", label: "Underflaps", required: true },
+  { id: "billets", label: "Billets", required: true },
+  { id: "front", label: "Front", required: true },
+  { id: "back", label: "Back", required: true },
+  { id: "serial", label: "Serial", required: true },
+  { id: "damage", label: "Damage (if any)", required: false },
 ] as const;
 
-export type PhotoAngleId = (typeof PHOTO_ANGLES)[number]["id"];
+export type PhotoAngleId = (typeof INTAKE_ANGLES)[number]["id"];
+
+export const SHOWROOM_SHOTS = [
+  { id: "near-side", file: "01-near-side.jpeg", label: "Near-side" },
+  { id: "off-side", file: "02-off-side.jpeg", label: "Off-side" },
+  { id: "seat", file: "03-seat-top.jpeg", label: "Seat" },
+  { id: "front", file: "04-front.jpeg", label: "Front" },
+  { id: "rear", file: "05-rear.jpeg", label: "Rear" },
+  { id: "left-under-flap", file: "06-left-under-flap.jpeg", label: "Left under-flap" },
+  { id: "right-under-flap", file: "07-right-under-flap.jpeg", label: "Right under-flap" },
+  { id: "panels", file: "08-panels-underside.jpeg", label: "Panels" },
+  { id: "serial", file: "09-stamps.jpeg", label: "Serial / stamps" },
+  { id: "cover", file: "10-saddle-cover.jpeg", label: "Cover" },
+] as const;
+
+export type ShowroomShotId = (typeof SHOWROOM_SHOTS)[number]["id"];
 
 export const PATH_INTERESTS = [
-  { id: "marketplace", label: "Marketplace" },
-  { id: "verified", label: "Verified" },
-  { id: "concierge", label: "Concierge" },
-  { id: "trade-in", label: "Trade-in" },
-  { id: "unsure", label: "Unsure" },
+  {
+    id: "self-serve",
+    label: "Self-serve",
+    hint: "You photograph, list, and ship to the buyer after sale. Labels are generated automatically.",
+  },
+  {
+    id: "verified",
+    label: "Verified · $150",
+    hint: "Non-refundable. A FedEx label to Jeff is queued so the saddle can be inspected. Not a support ticket — checkout and the label are automated.",
+  },
 ] as const;
 
 export type PathInterestId = (typeof PATH_INTERESTS)[number]["id"];
@@ -33,13 +51,13 @@ export const CONDITIONS = [
 
 export type Condition = (typeof CONDITIONS)[number];
 
-export type RouteId = Exclude<PathInterestId, "unsure">;
+export type QueueStatus = "pending" | "approved" | "rejected" | "published";
 
-export const PUBLISH_ROUTES: { id: RouteId; label: string }[] = [
-  { id: "marketplace", label: "Marketplace" },
-  { id: "verified", label: "Verified" },
-  { id: "concierge", label: "Concierge" },
-  { id: "trade-in", label: "Trade-in" },
+export const QUEUE_STATUSES: { id: QueueStatus; label: string }[] = [
+  { id: "pending", label: "Pending" },
+  { id: "approved", label: "Approved" },
+  { id: "rejected", label: "Rejected" },
+  { id: "published", label: "Published" },
 ];
 
 export type PublicListing = {
@@ -54,21 +72,26 @@ export type PublicListing = {
   tree: string;
   serial: string;
   stamps: string;
+  blocks?: string;
+  proNotes?: string;
   condition: Condition;
   wear: string;
   price: number;
-  program: string;
+  verified: boolean;
+  southBaySelect: boolean;
   includesCover: boolean;
   published: true;
   discipline: "English";
   location: string;
   serviceHistory: string;
-  route: RouteId;
+  route: PathInterestId;
   summary: string;
-  photoLabels: PhotoAngleId[];
-  photoSrcs?: Partial<Record<PhotoAngleId, string>>;
+  photoLabels: string[];
+  photoSrcs?: Record<string, string>;
   heroSrc?: string;
 };
+
+export type PhotoThumb = { name: string; thumb: string };
 
 export type IntakeDraft = {
   contactName: string;
@@ -82,26 +105,38 @@ export type IntakeDraft = {
   flap: string;
   tree: string;
   stamps: string;
+  serial: string;
   condition: Condition | "";
   wear: string;
   serviceHistory: string;
   priceExpectation: string;
   pathInterest: PathInterestId | "";
-  photos: Partial<Record<PhotoAngleId, { name: string; thumb: string }>>;
+  photos: Partial<Record<PhotoAngleId, PhotoThumb>>;
 };
 
 export type QueueSubmission = IntakeDraft & {
   id: string;
   submittedAt: string;
+  status: QueueStatus;
   founderPrice: string;
-  founderRoute: RouteId | "";
+  southBaySelect: boolean;
   publishedListingId: string | null;
+  notifiedAt: string | null;
+  notifyChannel: "webhook" | "email-stub" | null;
+  verificationPaidAt: string | null;
+  labelJobId: string | null;
+  rejectedReason: string;
 };
 
-export const MIN_PHOTOS = 9;
+export const MIN_PHOTOS = 6;
+export const VERIFICATION_FEE_USD = 150;
 
 export function photoCount(photos: IntakeDraft["photos"]) {
-  return PHOTO_ANGLES.filter((angle) => photos[angle.id]?.thumb).length;
+  return INTAKE_ANGLES.filter((angle) => photos[angle.id]?.thumb).length;
+}
+
+export function hasRequiredPhotos(photos: IntakeDraft["photos"]) {
+  return Boolean(photos.serial?.thumb) && photoCount(photos) >= MIN_PHOTOS;
 }
 
 export function listingName(input: {
@@ -125,8 +160,27 @@ export function formatUsd(value: number) {
 }
 
 export function pathLabel(id: string) {
+  return PATH_INTERESTS.find((item) => item.id === id)?.label ?? id;
+}
+
+export function shotLabel(id: string) {
   return (
-    [...PATH_INTERESTS, ...PUBLISH_ROUTES].find((item) => item.id === id)
-      ?.label ?? id
+    SHOWROOM_SHOTS.find((shot) => shot.id === id)?.label ??
+    INTAKE_ANGLES.find((angle) => angle.id === id)?.label ??
+    id.replaceAll("-", " ")
   );
+}
+
+export function listingPhotos(folder: string) {
+  const photoSrcs: Record<string, string> = {};
+  const photoLabels: string[] = [];
+  for (const shot of SHOWROOM_SHOTS) {
+    photoSrcs[shot.id] = `/listings/${folder}/${shot.file}`;
+    photoLabels.push(shot.id);
+  }
+  return {
+    photoSrcs,
+    photoLabels,
+    heroSrc: photoSrcs["near-side"],
+  };
 }
