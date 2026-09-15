@@ -159,17 +159,32 @@ export type WarehouseAddress = {
 };
 
 /**
- * Warehouse inbound only. Values come from VERIFY_SHIP_TO_* env — never
- * hardcode a destination (no Inlet Beach / WHOIS fallback).
+ * Jeff-locked inbound (via Andy). VERIFY_SHIP_TO_* env overrides.
+ * Not Inlet Beach / WHOIS.
  */
+export const VERIFY_SHIP_TO_DEFAULTS = {
+  name: "South Bay Saddlery",
+  attn: "Jeff Sarault",
+  street: "32 Glory Road",
+  city: "Santa Rosa Beach",
+  state: "FL",
+  zip: "32459",
+  hours: "Mon–Fri 9am–5pm CT",
+} as const;
+
+function envOrDefault(key: string, fallback: string) {
+  const value = process.env[key];
+  return value && value.trim() ? value.trim() : fallback;
+}
+
 export function warehouseShipTo(): WarehouseAddress {
-  const name = process.env.VERIFY_SHIP_TO_NAME || "";
-  const attn = process.env.VERIFY_SHIP_TO_ATTN || "";
-  const street = process.env.VERIFY_SHIP_TO_STREET || "";
-  const city = process.env.VERIFY_SHIP_TO_CITY || "";
-  const state = process.env.VERIFY_SHIP_TO_STATE || "";
-  const zip = process.env.VERIFY_SHIP_TO_ZIP || "";
-  const hours = process.env.VERIFY_SHIP_TO_HOURS || "";
+  const name = envOrDefault("VERIFY_SHIP_TO_NAME", VERIFY_SHIP_TO_DEFAULTS.name);
+  const attn = envOrDefault("VERIFY_SHIP_TO_ATTN", VERIFY_SHIP_TO_DEFAULTS.attn);
+  const street = envOrDefault("VERIFY_SHIP_TO_STREET", VERIFY_SHIP_TO_DEFAULTS.street);
+  const city = envOrDefault("VERIFY_SHIP_TO_CITY", VERIFY_SHIP_TO_DEFAULTS.city);
+  const state = envOrDefault("VERIFY_SHIP_TO_STATE", VERIFY_SHIP_TO_DEFAULTS.state);
+  const zip = envOrDefault("VERIFY_SHIP_TO_ZIP", VERIFY_SHIP_TO_DEFAULTS.zip);
+  const hours = envOrDefault("VERIFY_SHIP_TO_HOURS", VERIFY_SHIP_TO_DEFAULTS.hours);
   return {
     name,
     attn,
@@ -180,6 +195,11 @@ export function warehouseShipTo(): WarehouseAddress {
     hours,
     complete: Boolean(name && street && city && state && zip),
   };
+}
+
+export function formatWarehouseShipTo(address: WarehouseAddress = warehouseShipTo()) {
+  const attn = address.attn ? ` Attn ${address.attn}` : "";
+  return `${address.name}${attn}, ${address.street}, ${address.city} ${address.state} ${address.zip}`;
 }
 
 export type LabelJob = {
@@ -255,8 +275,10 @@ export function createLabelJob(input: {
     message = returnAddrMissing
       ? "label queued — SBS pays outbound FedEx to seller (seller address incomplete; not blocked)"
       : "label queued — SBS pays outbound FedEx to seller";
-  } else if (inboundMissing) {
-    message = "label queued — warehouse address from VERIFY_SHIP_TO_* not set yet";
+  } else if (kind === "seller_to_warehouse" && shipTo) {
+    message = inboundMissing
+      ? "label queued — warehouse address from VERIFY_SHIP_TO_* not set yet"
+      : `label queued — inbound seller → ${shipTo.name}, ${shipTo.city} ${shipTo.state}`;
   }
 
   return {

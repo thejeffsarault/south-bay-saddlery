@@ -33,8 +33,8 @@ export default async function OrderSuccessPage({
       {verification ? (
         <p className="text-sbs-ink">
           The $150 verification fee is non-refundable. SBS absorbs Stripe on
-          this charge. An inbound FedEx label seller → warehouse is queued. If
-          VERIFY_SHIP_TO_* is empty, the job stays queued.
+          this charge. An inbound FedEx label seller → South Bay Saddlery
+          (Santa Rosa Beach) is queued.
         </p>
       ) : restock ? (
         <p className="text-sbs-ink">

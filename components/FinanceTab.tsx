@@ -88,8 +88,8 @@ export function FinanceTab() {
         <p className="text-xs text-sbs-muted">
           Warehouse inbound:{" "}
           {data.warehouse.complete
-            ? `${data.warehouse.name}, ${data.warehouse.city} ${data.warehouse.state}`
-            : "VERIFY_SHIP_TO_* empty — inbound labels stay queued (env only, not hardcoded)"}
+            ? `${data.warehouse.name}${data.warehouse.attn ? ` / Attn ${data.warehouse.attn}` : ""}, ${data.warehouse.street}, ${data.warehouse.city} ${data.warehouse.state} ${data.warehouse.zip}${data.warehouse.hours ? ` · ${data.warehouse.hours}` : ""}`
+            : "VERIFY_SHIP_TO_* empty — inbound labels stay queued"}
         </p>
       </section>
 

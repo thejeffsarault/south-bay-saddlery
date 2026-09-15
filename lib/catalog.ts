@@ -39,7 +39,7 @@ export const PATH_INTERESTS = [
   {
     id: "verified",
     label: "Verified · $150",
-    hint: "Non-refundable $150. SBS absorbs Stripe on this charge. Success queues an inbound FedEx label seller → warehouse.",
+    hint: "Non-refundable $150. SBS absorbs Stripe on this charge. Success queues an inbound FedEx label seller → South Bay Saddlery (Santa Rosa Beach).",
   },
 ] as const;
 

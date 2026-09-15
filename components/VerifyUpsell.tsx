@@ -79,8 +79,8 @@ export function VerifyUpsell({
       <p className="text-sm text-sbs-ink">
         Non-refundable. Separate $150 PaymentIntent — not the listing Checkout.
         SBS absorbs Stripe on this charge. Success queues an inbound FedEx
-        label seller → warehouse. If VERIFY_SHIP_TO_* is empty, the job stays
-        queued.
+        label seller → South Bay Saddlery (Santa Rosa Beach). Env can override
+        VERIFY_SHIP_TO_*.
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
         <button

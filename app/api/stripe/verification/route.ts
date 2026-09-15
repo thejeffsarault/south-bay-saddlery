@@ -48,7 +48,7 @@ export async function POST(request: Request) {
               product_data: {
                 name: "SBS Verification",
                 description:
-                  "Non-refundable inspection. SBS absorbs Stripe on this charge. Success queues an inbound FedEx label seller → warehouse.",
+                  "Non-refundable inspection. SBS absorbs Stripe on this charge. Success queues an inbound FedEx label seller → South Bay Saddlery (Santa Rosa Beach).",
               },
             }),
           },
