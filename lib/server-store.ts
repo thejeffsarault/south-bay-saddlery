@@ -1,10 +1,11 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
-import type {
-  ConnectAccount,
-  FinanceEvent,
-  LabelJob,
-  Order,
+import {
+  normalizeLabelKind,
+  type ConnectAccount,
+  type FinanceEvent,
+  type LabelJob,
+  type Order,
 } from "./commerce";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
@@ -106,8 +107,19 @@ export async function findOrderByTransferGroup(transferGroup: string) {
   return orders.find((order) => order.transferGroup === transferGroup);
 }
 
+function withBilledTo(job: LabelJob): LabelJob {
+  if (job.billedTo) return job;
+  const kind = normalizeLabelKind(job.kind);
+  return {
+    ...job,
+    billedTo:
+      kind === "verify_fail_return" ? "platform" : kind === "seller_to_buyer" ? "buyer" : "seller",
+  };
+}
+
 export async function listLabels() {
-  return readList("labels");
+  const labels = await readList("labels");
+  return labels.map(withBilledTo);
 }
 
 export async function saveLabel(job: LabelJob) {
