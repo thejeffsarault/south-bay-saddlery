@@ -22,11 +22,13 @@ Do not merge leftover PR #1 (generic storefront scaffold).
 1. Platform Stripe account receives buyer Checkout. **No auto-transfer** to the seller on charge. Funds are held until close + a 7–10 business day payout window.
 2. **Connect Express** is for C2C sellers who receive payouts. JI-001 / JI-002 skip Connect — funds stay on the platform.
 3. Payout job: **net = list − 12%(list) − Stripe(PI amount)**. Stripe fee uses the full PaymentIntent (list + shipping + tax). 12% stays on item list only. Seller eats processing. Transfer only after close. Returned/refunded: skip 12% and skip Transfer; $100 restock is a separate buyer charge. Worked example $4690: Stripe ≈ $136.31, SBS 12% = $562.80, seller net ≈ $3990.89.
-4. Separate **$150 Verification** Checkout/PaymentIntent (product: SBS Verification). SBS absorbs Stripe on that charge. Success creates an inbound FedEx label job seller → warehouse.
-5. Webhooks write a finance log (`.data/finance.json` + `/queue` Finance tab): `payment_intent.succeeded`, `charge.refunded`, `checkout.session.completed`, Connect `account.updated`, `transfer.paid` / `transfer.failed` (plus `transfer.created` / `reversed`).
-6. Buyer copy: charged total via Stripe; 3 days from delivery to keep/return; return = buyer pays ship + $100 restock.
+4. Separate **$150 Verification** Checkout/PaymentIntent (product: SBS Verification). SBS absorbs Stripe on that charge. Success creates an inbound FedEx label job seller → warehouse (`VERIFY_SHIP_TO_*` env only — no hardcoded destination).
+5. **Fail-verify return:** platform books outbound FedEx to the seller. Label kind `verify_fail_return`, **billed to platform (SBS pays)**. Queue action on `/queue`. Does not block if the seller address is incomplete.
+6. Webhooks write a finance log (`.data/finance.json` + `/queue` Finance tab): `payment_intent.succeeded`, `charge.refunded`, `checkout.session.completed`, Connect `account.updated`, `transfer.paid` / `transfer.failed` (plus `transfer.created` / `reversed`).
+7. Buyer copy: listed price via Stripe; tax calculated at checkout; 3 days from delivery to keep/return; return = buyer pays ship + $100 restock.
    Seller copy: 12% of list; card processing deducted from payout; payout 7–10 biz days after close.
-7. **$100 restock** is a separate charge on the return path. No 12% on a reversed sale.
+8. **$100 restock** is a separate charge on the return path. No 12% on a reversed sale.
+9. **Stripe Tax = YES (Phase 1).** Checkout Sessions enable `automatic_tax` and collect a billing address. Line items use exclusive tax. If Stripe Tax is not configured on the account, Checkout retries without tax (stub/degrade). 12% success fee stays on item list only. Stripe processing is taken from the full PaymentIntent (list + shipping + tax).
 
 ## Local
 
@@ -46,7 +48,7 @@ Development: `npm run dev` (http://localhost:3000).
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Buy CTA live path |
 | `STRIPE_WEBHOOK_SECRET` | `/api/stripe/webhook` |
 | `FEDEX_API_KEY` / `FEDEX_CLIENT_ID` / `FEDEX_ACCOUNT_NUMBER` / `FEDEX_METER_NUMBER` | Live FedEx (optional; stub returns `label queued`) |
-| `VERIFY_SHIP_TO_NAME` / `STREET` / `CITY` / `STATE` / `ZIP` | Warehouse inbound address. If empty, the label job stays queued. |
+| `VERIFY_SHIP_TO_NAME` / `ATTN` / `STREET` / `CITY` / `STATE` / `ZIP` / `HOURS` | Warehouse inbound address. Env-templated only — never hardcoded. If empty, inbound jobs stay queued. Fail-verify returns ship to the seller, not this address. |
 | `NOTIFY_WEBHOOK_URL` | POST when a Sell Your Saddle submit lands (Andy/Kai). No direct Jeff email from code. |
 
 If Stripe keys are missing, Details still shows a Buy CTA that explains checkout is in test setup. No crash. No fake live money. Finance actions still write the ledger as stubs.

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatUsd, formatUsdPrecise } from "@/lib/catalog";
-import type { ConnectAccount, FinanceEvent, Order } from "@/lib/commerce";
+import type { ConnectAccount, FinanceEvent, LabelJob, Order } from "@/lib/commerce";
 import type { PayoutBreakdown } from "@/lib/payout";
 
 type FinancePayload = {
@@ -11,15 +11,24 @@ type FinancePayload = {
   workedExample: PayoutBreakdown;
   warehouse: {
     name: string;
+    attn: string;
     street: string;
     city: string;
     state: string;
     zip: string;
+    hours: string;
     complete: boolean;
+  };
+  tax?: {
+    phase: number;
+    automaticTaxOnCheckout: boolean;
+    successFeeOnListOnly: boolean;
+    stripeFeeOnPaymentIntent: boolean;
   };
   events: FinanceEvent[];
   orders: Order[];
   connect: ConnectAccount[];
+  labels?: LabelJob[];
 };
 
 export function FinanceTab() {
@@ -73,10 +82,14 @@ export function FinanceTab() {
           {data.exampleHolds ? " · example holds" : " · example drifted"}
         </p>
         <p className="text-xs text-sbs-muted">
+          Stripe Tax Phase 1: automatic_tax on Checkout. 12% stays on item
+          list. Stripe fee from the full PaymentIntent (tax/ship included).
+        </p>
+        <p className="text-xs text-sbs-muted">
           Warehouse inbound:{" "}
           {data.warehouse.complete
             ? `${data.warehouse.name}, ${data.warehouse.city} ${data.warehouse.state}`
-            : "VERIFY_SHIP_TO_* empty — inbound labels stay queued"}
+            : "VERIFY_SHIP_TO_* empty — inbound labels stay queued (env only, not hardcoded)"}
         </p>
       </section>
 
@@ -135,6 +148,27 @@ export function FinanceTab() {
             </div>
           </article>
         ))}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-serif text-xl text-sbs-text">Labels</h2>
+        <p className="text-sm text-sbs-ink">
+          Fail-verify returns are billed to the platform (SBS pays outbound
+          FedEx). Inbound verify still uses VERIFY_SHIP_TO_*.
+        </p>
+        {!data.labels?.length ? (
+          <p className="text-sm text-sbs-muted">No label jobs yet.</p>
+        ) : (
+          data.labels.map((job) => (
+            <article key={job.id} className="border border-sbs-border bg-sbs-surface p-4">
+              <p className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
+                {job.kind} · billed {job.billedTo}
+                {job.stub ? " · stub" : ""}
+              </p>
+              <p className="text-sm text-sbs-ink">{job.message}</p>
+            </article>
+          ))
+        )}
       </section>
 
       <section className="space-y-3">

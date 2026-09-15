@@ -15,5 +15,11 @@ export async function GET() {
     workedExample: WORKED_EXAMPLE,
     holdOnPlatform: true,
     autoTransferOnCharge: false,
+    stripeTax: {
+      phase: 1,
+      automaticTaxOnCheckout: true,
+      successFeeOnListOnly: true,
+      stripeFeeOnPaymentIntent: true,
+    },
   });
 }

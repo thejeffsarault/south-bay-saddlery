@@ -142,29 +142,42 @@ export function createEscrowOrder(input: {
 export type LabelKind =
   | "seller_to_buyer"
   | "seller_to_warehouse"
-  | "seller_to_jeff";
+  | "seller_to_jeff"
+  | "verify_fail_return";
+
+export type LabelBillTo = "platform" | "seller" | "buyer";
 
 export type WarehouseAddress = {
   name: string;
+  attn: string;
   street: string;
   city: string;
   state: string;
   zip: string;
+  hours: string;
   complete: boolean;
 };
 
+/**
+ * Warehouse inbound only. Values come from VERIFY_SHIP_TO_* env — never
+ * hardcode a destination (no Inlet Beach / WHOIS fallback).
+ */
 export function warehouseShipTo(): WarehouseAddress {
   const name = process.env.VERIFY_SHIP_TO_NAME || "";
+  const attn = process.env.VERIFY_SHIP_TO_ATTN || "";
   const street = process.env.VERIFY_SHIP_TO_STREET || "";
   const city = process.env.VERIFY_SHIP_TO_CITY || "";
   const state = process.env.VERIFY_SHIP_TO_STATE || "";
   const zip = process.env.VERIFY_SHIP_TO_ZIP || "";
+  const hours = process.env.VERIFY_SHIP_TO_HOURS || "";
   return {
     name,
+    attn,
     street,
     city,
     state,
     zip,
+    hours,
     complete: Boolean(name && street && city && state && zip),
   };
 }
@@ -175,6 +188,7 @@ export type LabelJob = {
   status: "queued";
   message: string;
   stub: boolean;
+  billedTo: LabelBillTo;
   fedexConfigured: boolean;
   warehouseComplete: boolean;
   createdAt: string;
@@ -195,6 +209,7 @@ export function fedexEnvPresent() {
 
 export function normalizeLabelKind(kind?: string): LabelKind {
   if (kind === "seller_to_buyer") return "seller_to_buyer";
+  if (kind === "verify_fail_return") return "verify_fail_return";
   return "seller_to_warehouse";
 }
 
@@ -203,21 +218,56 @@ export function createLabelJob(input: {
   listingId?: string;
   submissionId?: string;
   orderId?: string;
+  shipTo?: Partial<WarehouseAddress>;
 }): LabelJob {
   const kind = normalizeLabelKind(input.kind);
   const configured = fedexEnvPresent();
-  const shipTo = kind === "seller_to_warehouse" ? warehouseShipTo() : undefined;
+  const billedTo: LabelBillTo =
+    kind === "verify_fail_return" ? "platform" : kind === "seller_to_buyer" ? "buyer" : "seller";
+
+  let shipTo: WarehouseAddress | undefined;
+  if (kind === "seller_to_warehouse") {
+    shipTo = warehouseShipTo();
+  } else if (kind === "verify_fail_return") {
+    shipTo = {
+      name: input.shipTo?.name || "",
+      attn: input.shipTo?.attn || "",
+      street: input.shipTo?.street || "",
+      city: input.shipTo?.city || "",
+      state: input.shipTo?.state || "",
+      zip: input.shipTo?.zip || "",
+      hours: input.shipTo?.hours || "",
+      complete: Boolean(
+        input.shipTo?.name &&
+          input.shipTo?.street &&
+          input.shipTo?.city &&
+          input.shipTo?.state &&
+          input.shipTo?.zip,
+      ),
+    };
+  }
+
   const inboundMissing = kind === "seller_to_warehouse" && !shipTo?.complete;
+  const returnAddrMissing = kind === "verify_fail_return" && !shipTo?.complete;
+
+  let message = "label queued";
+  if (kind === "verify_fail_return") {
+    message = returnAddrMissing
+      ? "label queued — SBS pays outbound FedEx to seller (seller address incomplete; not blocked)"
+      : "label queued — SBS pays outbound FedEx to seller";
+  } else if (inboundMissing) {
+    message = "label queued — warehouse address from VERIFY_SHIP_TO_* not set yet";
+  }
+
   return {
     id: newId("lbl"),
     kind,
     status: "queued",
-    message: inboundMissing
-      ? "label queued — warehouse address missing (VERIFY_SHIP_TO_*)"
-      : "label queued",
-    stub: !configured || inboundMissing,
+    message,
+    stub: !configured,
+    billedTo,
     fedexConfigured: configured,
-    warehouseComplete: shipTo?.complete ?? true,
+    warehouseComplete: kind === "seller_to_warehouse" ? Boolean(shipTo?.complete) : true,
     createdAt: new Date().toISOString(),
     listingId: input.listingId,
     submissionId: input.submissionId,

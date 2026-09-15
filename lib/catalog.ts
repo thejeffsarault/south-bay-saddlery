@@ -134,6 +134,10 @@ export type QueueSubmission = IntakeDraft & {
   verificationPaidAt: string | null;
   labelJobId: string | null;
   rejectedReason: string;
+  returnStreet?: string;
+  returnCity?: string;
+  returnState?: string;
+  returnZip?: string;
 };
 
 export const MIN_BODY_PHOTOS = 6;

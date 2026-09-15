@@ -255,6 +255,93 @@ export function QueueBoard() {
             {notice[item.id] ? (
               <p className="mt-2 text-sm text-sbs-ink">{notice[item.id]}</p>
             ) : null}
+            <div className="mt-4 space-y-2 border border-sbs-border p-3">
+              <p className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
+                Fail verify — return to seller
+              </p>
+              <p className="text-xs text-sbs-ink">
+                SBS pays. Platform books outbound FedEx (verify_fail_return).
+                Seller address can be incomplete — the job still queues.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <input
+                  className={fieldClass}
+                  placeholder="Street"
+                  value={item.returnStreet || ""}
+                  onChange={(e) =>
+                    updateSubmission(item.id, { returnStreet: e.target.value })
+                  }
+                />
+                <input
+                  className={fieldClass}
+                  placeholder="City"
+                  value={item.returnCity || ""}
+                  onChange={(e) =>
+                    updateSubmission(item.id, { returnCity: e.target.value })
+                  }
+                />
+                <input
+                  className={fieldClass}
+                  placeholder="State"
+                  value={item.returnState || ""}
+                  onChange={(e) =>
+                    updateSubmission(item.id, { returnState: e.target.value })
+                  }
+                />
+                <input
+                  className={fieldClass}
+                  placeholder="ZIP"
+                  value={item.returnZip || ""}
+                  onChange={(e) =>
+                    updateSubmission(item.id, { returnZip: e.target.value })
+                  }
+                />
+              </div>
+              <button
+                type="button"
+                className="w-full border border-sbs-border px-4 py-3 text-sm"
+                onClick={async () => {
+                  const res = await fetch("/api/verify/fail-return", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      submissionId: item.id,
+                      listingId: item.publishedListingId || undefined,
+                      shipTo: {
+                        name: item.contactName,
+                        street: item.returnStreet || "",
+                        city: item.returnCity || "",
+                        state: item.returnState || "",
+                        zip: item.returnZip || "",
+                      },
+                    }),
+                  });
+                  const data = (await res.json()) as {
+                    ok?: boolean;
+                    billedTo?: string;
+                    message?: string;
+                    job?: { id: string };
+                  };
+                  if (data.job?.id) {
+                    updateSubmission(item.id, {
+                      labelJobId: data.job.id,
+                      status: "rejected",
+                      rejectedReason:
+                        item.rejectedReason ||
+                        "Verification failed — returning to seller (SBS pays outbound FedEx).",
+                    });
+                  }
+                  setNotice((current) => ({
+                    ...current,
+                    [item.id]:
+                      data.message ||
+                      `Fail-return queued · billed to ${data.billedTo || "platform"}`,
+                  }));
+                }}
+              >
+                Fail verify — return (SBS pays)
+              </button>
+            </div>
             {item.publishedListingId ? (
               <button
                 type="button"

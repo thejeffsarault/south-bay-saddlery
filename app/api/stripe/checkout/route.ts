@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isPlatformOwnedListing } from "@/lib/payout";
 import { getSeedListing } from "@/lib/inventory";
 import { getStripe, siteOrigin, stripeConfigured } from "@/lib/stripe";
+import { createTaxedCheckoutSession, taxedPrice } from "@/lib/stripe-tax";
 
 export const runtime = "nodejs";
 
@@ -14,7 +15,6 @@ export async function POST(request: Request) {
     price?: number;
     sellerEmail?: string;
     shippingUsd?: number;
-    taxUsd?: number;
   } = {};
   try {
     body = (await request.json()) as typeof body;
@@ -52,7 +52,6 @@ export async function POST(request: Request) {
   const name = seed?.name || body.listingName || "Pre-owned English saddle";
   const listAmount = seed?.price || Number(body.price) || 0;
   const shippingUsd = Math.max(0, Number(body.shippingUsd) || 0);
-  const taxUsd = Math.max(0, Number(body.taxUsd) || 0);
   const listingId = seed?.id || body.listingId || "";
   const platformOwned = isPlatformOwnedListing(listingId);
   const payoutMode = platformOwned ? "platform" : "connect";
@@ -66,74 +65,64 @@ export async function POST(request: Request) {
   }
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "usd",
-            unit_amount: Math.round(listAmount * 100),
-            product_data: {
-              name,
-              description:
-                "Charged in full to South Bay Saddlery. 3 days from delivery to keep or return. Return: you pay shipping + $100 restock.",
-            },
+    const { session, automaticTax, fallback } = await createTaxedCheckoutSession(
+      stripe,
+      {
+        mode: "payment",
+        line_items: [
+          {
+            quantity: 1,
+            price_data: taxedPrice({
+              currency: "usd",
+              unit_amount: Math.round(listAmount * 100),
+              product_data: {
+                name,
+                description:
+                  "Charged in full to South Bay Saddlery. Tax calculated at checkout. 3 days from delivery to keep or return. Return: you pay shipping + $100 restock.",
+              },
+            }),
+          },
+          ...(shippingUsd
+            ? [
+                {
+                  quantity: 1,
+                  price_data: taxedPrice({
+                    currency: "usd" as const,
+                    unit_amount: Math.round(shippingUsd * 100),
+                    product_data: { name: "Shipping" },
+                  }),
+                },
+              ]
+            : []),
+        ],
+        success_url: `${origin}/order/success?session_id={CHECKOUT_SESSION_ID}&kind=listing`,
+        cancel_url: `${origin}/collection/${encodeURIComponent(listingId)}`,
+        payment_intent_data: {
+          transfer_group: transferGroup,
+          metadata: {
+            kind: "listing",
+            listingId,
+            listingName: name,
+            payoutMode,
+            platformOwned: String(platformOwned),
+            holdOnPlatform: "true",
+            autoTransfer: "false",
+            listAmount: String(listAmount),
           },
         },
-        ...(shippingUsd
-          ? [
-              {
-                quantity: 1,
-                price_data: {
-                  currency: "usd" as const,
-                  unit_amount: Math.round(shippingUsd * 100),
-                  product_data: { name: "Shipping" },
-                },
-              },
-            ]
-          : []),
-        ...(taxUsd
-          ? [
-              {
-                quantity: 1,
-                price_data: {
-                  currency: "usd" as const,
-                  unit_amount: Math.round(taxUsd * 100),
-                  product_data: { name: "Tax" },
-                },
-              },
-            ]
-          : []),
-      ],
-      success_url: `${origin}/order/success?session_id={CHECKOUT_SESSION_ID}&kind=listing`,
-      cancel_url: `${origin}/collection/${encodeURIComponent(listingId)}`,
-      payment_intent_data: {
-        transfer_group: transferGroup,
         metadata: {
           kind: "listing",
           listingId,
           listingName: name,
           payoutMode,
           platformOwned: String(platformOwned),
-          holdOnPlatform: "true",
-          autoTransfer: "false",
+          transferGroup,
+          sellerEmail: body.sellerEmail || seed?.sellerEmail || "",
           listAmount: String(listAmount),
+          shippingUsd: String(shippingUsd),
         },
       },
-      metadata: {
-        kind: "listing",
-        listingId,
-        listingName: name,
-        payoutMode,
-        platformOwned: String(platformOwned),
-        transferGroup,
-        sellerEmail: body.sellerEmail || seed?.sellerEmail || "",
-        listAmount: String(listAmount),
-        shippingUsd: String(shippingUsd),
-        taxUsd: String(taxUsd),
-      },
-    });
+    );
 
     return NextResponse.json({
       ok: true,
@@ -142,6 +131,8 @@ export async function POST(request: Request) {
       transferGroup,
       payoutMode,
       holdOnPlatform: true,
+      automaticTax,
+      taxFallback: fallback || null,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Checkout failed.";

@@ -82,7 +82,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         ? "Verification $150 captured on platform. SBS absorbs Stripe. No seller transfer."
         : kind === "restock"
           ? "Separate $100 restock charge captured. No 12% on the reversed sale."
-          : "Buyer Checkout captured on the platform account. Held — no auto-transfer to seller.",
+          : "Buyer Checkout captured on the platform account. Held — no auto-transfer to seller. Stripe fee uses the full PaymentIntent (list + shipping + tax). 12% stays on item list only.",
   });
 
   if (kind === "verification") {
@@ -185,7 +185,7 @@ export async function POST(request: Request) {
             ? "Verification PaymentIntent succeeded. Inbound warehouse label queued. SBS absorbed processing."
             : kind === "restock"
               ? "Restock PaymentIntent succeeded. Separate $100 charge."
-              : "Listing PaymentIntent succeeded. Funds held on platform until close + 7–10 biz day payout.",
+              : "Listing PaymentIntent succeeded. Funds held on platform until close + 7–10 biz day payout. Stripe fee from this PI amount (includes tax/ship). 12% on list only.",
       });
       break;
     }

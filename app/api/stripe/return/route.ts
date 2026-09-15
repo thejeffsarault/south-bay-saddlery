@@ -4,6 +4,7 @@ import { createEscrowOrder } from "@/lib/commerce";
 import { logFinance } from "@/lib/finance";
 import { findOrderById, saveOrder, updateOrder } from "@/lib/server-store";
 import { getStripe, siteOrigin, stripeConfigured } from "@/lib/stripe";
+import { createTaxedCheckoutSession, taxedPrice } from "@/lib/stripe-tax";
 
 export const runtime = "nodejs";
 
@@ -43,19 +44,19 @@ export async function POST(request: Request) {
 
     try {
       const origin = siteOrigin(request);
-      const session = await stripe.checkout.sessions.create({
+      const { session } = await createTaxedCheckoutSession(stripe, {
         mode: "payment",
         line_items: [
           {
             quantity: 1,
-            price_data: {
+            price_data: taxedPrice({
               currency: "usd",
               unit_amount: RESTOCK_FEE_USD * 100,
               product_data: {
                 name: "SBS restocking fee",
                 description: "Separate $100 restock on return. Buyer also pays return shipping.",
               },
-            },
+            }),
           },
         ],
         success_url: `${origin}/order/success?session_id={CHECKOUT_SESSION_ID}&kind=restock`,

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { VERIFICATION_FEE_USD } from "@/lib/payout";
 import { getStripe, siteOrigin, stripeConfigured } from "@/lib/stripe";
+import { createTaxedCheckoutSession, taxedPrice } from "@/lib/stripe-tax";
 
 export const runtime = "nodejs";
 
@@ -34,37 +35,40 @@ export async function POST(request: Request) {
   const submissionId = body.submissionId || "";
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "usd",
-            unit_amount: VERIFICATION_FEE_USD * 100,
-            product_data: {
-              name: "SBS Verification",
-              description:
-                "Non-refundable inspection. SBS absorbs card processing. Success queues an inbound FedEx label seller → warehouse.",
-            },
+    const { session, automaticTax, fallback } = await createTaxedCheckoutSession(
+      stripe,
+      {
+        mode: "payment",
+        line_items: [
+          {
+            quantity: 1,
+            price_data: taxedPrice({
+              currency: "usd",
+              unit_amount: VERIFICATION_FEE_USD * 100,
+              product_data: {
+                name: "SBS Verification",
+                description:
+                  "Non-refundable inspection. SBS absorbs Stripe on this charge. Success queues an inbound FedEx label seller → warehouse.",
+              },
+            }),
+          },
+        ],
+        success_url: `${origin}/order/success?session_id={CHECKOUT_SESSION_ID}&kind=verification&submissionId=${encodeURIComponent(submissionId)}`,
+        cancel_url: `${origin}/verify?submissionId=${encodeURIComponent(submissionId)}`,
+        payment_intent_data: {
+          metadata: {
+            kind: "verification",
+            submissionId,
+            sbsAbsorbsStripe: "true",
           },
         },
-      ],
-      success_url: `${origin}/order/success?session_id={CHECKOUT_SESSION_ID}&kind=verification&submissionId=${encodeURIComponent(submissionId)}`,
-      cancel_url: `${origin}/verify?submissionId=${encodeURIComponent(submissionId)}`,
-      payment_intent_data: {
         metadata: {
           kind: "verification",
           submissionId,
           sbsAbsorbsStripe: "true",
         },
       },
-      metadata: {
-        kind: "verification",
-        submissionId,
-        sbsAbsorbsStripe: "true",
-      },
-    });
+    );
 
     return NextResponse.json({
       ok: true,
@@ -72,6 +76,8 @@ export async function POST(request: Request) {
       id: session.id,
       product: "SBS Verification",
       amount: VERIFICATION_FEE_USD,
+      automaticTax,
+      taxFallback: fallback || null,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Verification failed.";
