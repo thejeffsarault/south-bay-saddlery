@@ -394,7 +394,6 @@ export function SellForm() {
                 <input
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   className="absolute inset-0 cursor-pointer opacity-0"
                   onChange={(e) => onPhoto(angle.id, e.target.files?.[0])}
                 />

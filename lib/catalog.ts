@@ -160,6 +160,8 @@ export function formatUsd(value: number) {
 }
 
 export function pathLabel(id: string) {
+  if (id === "verified") return "Verified";
+  if (id === "self-serve") return "Self-serve";
   return PATH_INTERESTS.find((item) => item.id === id)?.label ?? id;
 }
 
