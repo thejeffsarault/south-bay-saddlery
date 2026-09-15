@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ConsultationCta } from "@/components/SiteChrome";
+import { SaddleCard } from "@/components/SaddleCard";
+import { PUBLISHED_LISTINGS } from "@/lib/inventory";
 
 export default function HomePage() {
   return (
@@ -9,21 +10,23 @@ export default function HomePage() {
       </p>
       <div className="space-y-4">
         <h1 className="font-serif text-[2.6rem] leading-[1.05] text-sbs-text sm:text-5xl">
-          Present the saddle. Explore the Collection.
+          Sell your saddle. Browse the Collection.
         </h1>
         <p className="max-w-xl text-base leading-relaxed text-sbs-ink">
-          South Bay Saddlery Congress is a mobile intake and collection for
-          pre-owned English saddles. Photograph every angle, send the facts,
-          and Jeff prices, routes, and publishes from the founder queue.
+          South Bay Saddlery is a mobile-first marketplace for pre-owned
+          English saddles. Photograph the required angles, send the facts, and
+          a founder reviews every listing before it goes live. Shipping and
+          escrow only — the warehouse is ship/receive, not a showroom. No
+          walk-ins or appointments.
         </p>
       </div>
       <div className="brass-rule" />
       <div className="grid gap-3">
         <Link
-          href="/present"
+          href="/sell"
           className="bg-sbs-accent px-5 py-4 text-center text-sm tracking-wide text-sbs-on-accent"
         >
-          Present Your Saddle
+          Sell Your Saddle
         </Link>
         <Link
           href="/collection"
@@ -31,8 +34,17 @@ export default function HomePage() {
         >
           Explore the Collection
         </Link>
-        <ConsultationCta />
       </div>
+      <section className="space-y-4">
+        <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
+          In the Collection
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {PUBLISHED_LISTINGS.map((listing) => (
+            <SaddleCard key={listing.id} listing={listing} />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

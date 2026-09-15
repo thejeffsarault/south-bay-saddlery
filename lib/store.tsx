@@ -9,16 +9,17 @@ import {
   useState,
 } from "react";
 import {
-  PHOTO_ANGLES,
+  INTAKE_ANGLES,
   listingName,
   type IntakeDraft,
+  type PathInterestId,
   type PublicListing,
+  type QueueStatus,
   type QueueSubmission,
-  type RouteId,
 } from "./catalog";
 import { PUBLISHED_LISTINGS } from "./inventory";
 
-const STORAGE_KEY = "sbs-congress-mvp-v1";
+const STORAGE_KEY = "sbs-mvp-v1";
 
 type Persisted = {
   submissions: QueueSubmission[];
@@ -37,6 +38,7 @@ const emptyDraft = (): IntakeDraft => ({
   flap: "",
   tree: "",
   stamps: "",
+  serial: "",
   condition: "",
   wear: "",
   serviceHistory: "",
@@ -45,47 +47,20 @@ const emptyDraft = (): IntakeDraft => ({
   photos: {},
 });
 
-const seedQueue: QueueSubmission[] = [
-  {
-    id: "q-seed-pessoa",
-    submittedAt: "2026-09-10T16:00:00.000Z",
-    contactName: "Elena Marsh",
-    email: "elena@example.com",
-    phone: "310-555-0144",
-    location: "Palos Verdes, CA",
-    brand: "Pessoa",
-    model: "Rodrigo",
-    year: "2018",
-    seat: '17.5"',
-    flap: "Regular",
-    tree: "Medium",
-    stamps: "Pessoa · Rodrigo · 17.5 · 18",
-    condition: "Good",
-    wear: "Knee-roll softening; one cosmetic flap scuff.",
-    serviceHistory: "Reflocked 2023.",
-    priceExpectation: "2200",
-    pathInterest: "unsure",
-    photos: {},
-    founderPrice: "",
-    founderRoute: "",
-    publishedListingId: null,
-  },
-];
-
 function readPersisted(): Persisted {
   if (typeof window === "undefined") {
-    return { submissions: seedQueue, extraListings: [] };
+    return { submissions: [], extraListings: [] };
   }
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { submissions: seedQueue, extraListings: [] };
+    if (!raw) return { submissions: [], extraListings: [] };
     const parsed = JSON.parse(raw) as Persisted;
     return {
-      submissions: parsed.submissions?.length ? parsed.submissions : seedQueue,
+      submissions: parsed.submissions ?? [],
       extraListings: parsed.extraListings ?? [],
     };
   } catch {
-    return { submissions: seedQueue, extraListings: [] };
+    return { submissions: [], extraListings: [] };
   }
 }
 
@@ -93,19 +68,27 @@ type StoreValue = {
   ready: boolean;
   submissions: QueueSubmission[];
   listings: PublicListing[];
-  submitIntake: (draft: IntakeDraft) => string;
-  updateGate: (
+  submitIntake: (draft: IntakeDraft) => QueueSubmission;
+  setStatus: (
     id: string,
-    patch: { founderPrice?: string; founderRoute?: RouteId | "" },
+    status: QueueStatus,
+    patch?: Partial<
+      Pick<
+        QueueSubmission,
+        "founderPrice" | "southBaySelect" | "rejectedReason"
+      >
+    >,
   ) => void;
+  updateSubmission: (id: string, patch: Partial<QueueSubmission>) => void;
   publish: (id: string) => { ok: true; listingId: string } | { ok: false; reason: string };
+  notifyJeff: (id: string) => Promise<{ ok: boolean; notifiedAt: string; channel: "webhook" | "email-stub" }>;
 };
 
 const StoreContext = createContext<StoreValue | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
-  const [submissions, setSubmissions] = useState<QueueSubmission[]>(seedQueue);
+  const [submissions, setSubmissions] = useState<QueueSubmission[]>([]);
   const [extraListings, setExtraListings] = useState<PublicListing[]>([]);
 
   useEffect(() => {
@@ -123,82 +106,157 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   }, [ready, submissions, extraListings]);
 
+  const updateSubmission = useCallback((id: string, patch: Partial<QueueSubmission>) => {
+    setSubmissions((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
+  }, []);
+
   const submitIntake = useCallback((draft: IntakeDraft) => {
     const id = `q-${Date.now().toString(36)}`;
     const next: QueueSubmission = {
       ...draft,
       id,
       submittedAt: new Date().toISOString(),
-      founderPrice: "",
-      founderRoute: "",
+      status: "pending",
+      founderPrice: draft.priceExpectation,
+      southBaySelect: false,
       publishedListingId: null,
+      notifiedAt: null,
+      notifyChannel: null,
+      verificationPaidAt: null,
+      labelJobId: null,
+      rejectedReason: "",
     };
     setSubmissions((current) => [next, ...current]);
-    return id;
+    return next;
   }, []);
 
-  const updateGate = useCallback(
-    (id: string, patch: { founderPrice?: string; founderRoute?: RouteId | "" }) => {
+  const setStatus = useCallback(
+    (
+      id: string,
+      status: QueueStatus,
+      patch?: Partial<
+        Pick<QueueSubmission, "founderPrice" | "southBaySelect" | "rejectedReason">
+      >,
+    ) => {
       setSubmissions((current) =>
-        current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+        current.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                status,
+                ...patch,
+              }
+            : item,
+        ),
       );
     },
     [],
   );
 
-  const publish = useCallback((id: string) => {
-    const item = submissions.find((submission) => submission.id === id);
-    if (!item) return { ok: false as const, reason: "Submission not found." };
-    if (item.publishedListingId) {
-      return { ok: false as const, reason: "Already published." };
-    }
-    const price = Number(item.founderPrice);
-    if (!item.founderPrice || Number.isNaN(price) || price <= 0) {
-      return { ok: false as const, reason: "Set a founder price before publish." };
-    }
-    if (!item.founderRoute) {
-      return { ok: false as const, reason: "Set a route before publish." };
-    }
+  const publish = useCallback(
+    (id: string) => {
+      const item = submissions.find((submission) => submission.id === id);
+      if (!item) return { ok: false as const, reason: "Submission not found." };
+      if (item.status === "published" || item.publishedListingId) {
+        return { ok: false as const, reason: "Already published." };
+      }
+      if (item.status !== "approved") {
+        return { ok: false as const, reason: "Approve before publish." };
+      }
+      const price = Number(item.founderPrice || item.priceExpectation);
+      if (!price || Number.isNaN(price) || price <= 0) {
+        return { ok: false as const, reason: "Set a founder price before publish." };
+      }
 
-    const listingId = `sbs-${id.replace(/^q-/, "")}`;
-    const listing: PublicListing = {
-      id: listingId,
-      sku: listingId.toUpperCase(),
-      name: listingName(item),
-      brand: item.brand,
-      model: item.model,
-      year: item.year,
-      seat: item.seat,
-      flap: item.flap,
-      tree: item.tree,
-      serial: item.stamps,
-      stamps: item.stamps,
-      condition: item.condition || "Good",
-      wear: item.wear,
-      price,
-      program: "Collection",
-      includesCover: false,
-      published: true,
-      discipline: "English",
-      location: item.location,
-      serviceHistory: item.serviceHistory,
-      route: item.founderRoute,
-      summary: `Pre-owned ${listingName(item)}.`,
-      photoLabels: PHOTO_ANGLES.map((angle) => angle.id).filter(
-        (angle) => item.photos[angle],
-      ),
-    };
+      const listingId = `sbs-${id.replace(/^q-/, "")}`;
+      const photoSrcs: Record<string, string> = {};
+      for (const angle of INTAKE_ANGLES) {
+        const photo = item.photos[angle.id];
+        if (photo?.thumb) photoSrcs[angle.id] = photo.thumb;
+      }
 
-    setExtraListings((current) => [listing, ...current]);
-    setSubmissions((current) =>
-      current.map((submission) =>
-        submission.id === id
-          ? { ...submission, publishedListingId: listingId }
-          : submission,
-      ),
-    );
-    return { ok: true as const, listingId };
-  }, [submissions]);
+      const listing: PublicListing = {
+        id: listingId,
+        sku: listingId.toUpperCase(),
+        name: listingName(item),
+        brand: item.brand,
+        model: item.model,
+        year: item.year,
+        seat: item.seat,
+        flap: item.flap,
+        tree: item.tree,
+        serial: item.serial,
+        stamps: item.stamps,
+        condition: item.condition || "Good",
+        wear: item.wear,
+        price,
+        verified: item.pathInterest === "verified",
+        southBaySelect:
+          item.pathInterest === "verified" ? item.southBaySelect : false,
+        includesCover: false,
+        published: true,
+        discipline: "English",
+        location: item.location,
+        serviceHistory: item.serviceHistory,
+        route: (item.pathInterest || "self-serve") as PathInterestId,
+        platformOwned: false,
+        payoutMode: "connect",
+        sellerEmail: item.email,
+        summary: `Pre-owned ${listingName(item)}.`,
+        photoLabels: INTAKE_ANGLES.map((angle) => angle.id).filter(
+          (angle) => item.photos[angle],
+        ),
+        photoSrcs,
+        heroSrc: photoSrcs.front || photoSrcs.panels,
+      };
+
+      setExtraListings((current) => [listing, ...current]);
+      setSubmissions((current) =>
+        current.map((submission) =>
+          submission.id === id
+            ? {
+                ...submission,
+                status: "published",
+                publishedListingId: listingId,
+                founderPrice: String(price),
+              }
+            : submission,
+        ),
+      );
+      return { ok: true as const, listingId };
+    },
+    [submissions],
+  );
+
+  const notifyJeff = useCallback(
+    async (id: string) => {
+      const item = submissions.find((submission) => submission.id === id);
+      const res = await fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          submissionId: id,
+          headline: item
+            ? `${item.brand} ${item.model} ${item.seat} ${item.year}`.trim()
+            : id,
+          pathInterest: item?.pathInterest ?? "",
+        }),
+      });
+      const data = (await res.json()) as {
+        ok: boolean;
+        notifiedAt: string;
+        channel: "webhook" | "email-stub";
+      };
+      updateSubmission(id, {
+        notifiedAt: data.notifiedAt,
+        notifyChannel: data.channel,
+      });
+      return data;
+    },
+    [submissions, updateSubmission],
+  );
 
   const listings = useMemo(
     () => [...extraListings, ...PUBLISHED_LISTINGS],
@@ -211,10 +269,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       submissions,
       listings,
       submitIntake,
-      updateGate,
+      setStatus,
+      updateSubmission,
       publish,
+      notifyJeff,
     }),
-    [ready, submissions, listings, submitIntake, updateGate, publish],
+    [
+      ready,
+      submissions,
+      listings,
+      submitIntake,
+      setStatus,
+      updateSubmission,
+      publish,
+      notifyJeff,
+    ],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

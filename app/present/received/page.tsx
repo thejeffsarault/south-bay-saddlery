@@ -1,24 +1,5 @@
-import type { Metadata } from "next";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Presentation received",
-};
-
-export default function PresentReceivedPage() {
-  return (
-    <div className="space-y-5">
-      <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
-        Intake
-      </p>
-      <h1 className="font-serif text-4xl text-sbs-text">Received</h1>
-      <p className="text-sbs-ink">
-        Your saddle is in the founder queue. Jeff will set price and route
-        before anything is published to Explore the Collection.
-      </p>
-      <Link href="/collection" className="inline-block text-sm underline underline-offset-4">
-        Explore the Collection
-      </Link>
-    </div>
-  );
+export default function PresentReceivedRedirect() {
+  redirect("/sell/received");
 }

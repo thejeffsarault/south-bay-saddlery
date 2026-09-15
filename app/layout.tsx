@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     template: "%s · South Bay Saddlery",
   },
   description:
-    "Congress mobile MVP for pre-owned English saddles: Present Your Saddle, Explore the Collection, Details, and the founder queue.",
+    "Mobile-first marketplace for pre-owned English saddles: Sell Your Saddle, Collection, Details, and founder approval.",
   icons: {
     icon: [
       { url: "/favicon.ico" },
