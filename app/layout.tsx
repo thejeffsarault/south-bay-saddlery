@@ -29,6 +29,12 @@ export const metadata: Metadata = {
   },
   description:
     "Congress mobile MVP for pre-owned English saddles: Present Your Saddle, Explore the Collection, Details, and the founder queue.",
+  icons: {
+    icon: [
+      { url: "/brand/SBS-favicon.ico" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -39,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${cormorant.variable} ${sourceSans.variable} ${ibmPlex.variable} flex min-h-dvh flex-col bg-ivory font-sans text-espresso antialiased`}
+        className={`${cormorant.variable} ${sourceSans.variable} ${ibmPlex.variable} flex min-h-dvh flex-col bg-sbs-bg font-sans text-sbs-text antialiased`}
       >
         <StoreProvider>
           <SiteHeader />

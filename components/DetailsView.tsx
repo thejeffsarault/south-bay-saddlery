@@ -14,30 +14,30 @@ export function DetailsView({ id }: { id: string }) {
 
   if (!listing) {
     if (!ready && !seeded) {
-      return <p className="text-sm text-charcoal">Opening Details…</p>;
+      return <p className="text-sm text-sbs-muted">Opening Details…</p>;
     }
     notFound();
   }
 
   return (
     <article className="space-y-8">
-      <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-cognac">
+      <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
         Details
       </p>
       <header className="space-y-2">
-        <h1 className="font-serif text-4xl leading-tight text-espresso">
+        <h1 className="font-serif text-4xl leading-tight text-sbs-text">
           {listing.name}
         </h1>
-        <p className="font-mono text-sm text-charcoal">
+        <p className="font-mono text-sm text-sbs-ink">
           {listing.sku} · {listing.program}
           {listing.includesCover ? " · with cover" : ""}
         </p>
       </header>
 
-      <p className="font-mono text-2xl text-espresso">
+      <p className="font-mono text-2xl text-sbs-text">
         {formatUsd(listing.price)}
       </p>
-      <p className="text-charcoal">{listing.summary}</p>
+      <p className="text-sbs-ink">{listing.summary}</p>
 
       <AngleGrid
         labels={listing.photoLabels}
@@ -45,7 +45,7 @@ export function DetailsView({ id }: { id: string }) {
         altPrefix={listing.name}
       />
 
-      <dl className="grid gap-4 border-y border-border py-6 text-sm">
+      <dl className="grid gap-4 border-y border-sbs-border py-6 text-sm">
         <Fact label="Brand" value={listing.brand} />
         <Fact label="Model" value={listing.model} />
         <Fact label="Year" value={listing.year} />
@@ -70,10 +70,10 @@ export function DetailsView({ id }: { id: string }) {
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-cognac">
+      <dt className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-sbs-muted">
         {label}
       </dt>
-      <dd className="mt-1 text-espresso">{value}</dd>
+      <dd className="mt-1 text-sbs-text">{value}</dd>
     </div>
   );
 }

@@ -13,14 +13,14 @@ import {
 import { useStore } from "@/lib/store";
 
 const fieldClass =
-  "w-full border border-border bg-ivory px-3 py-2 text-sm text-espresso outline-none focus:border-cognac";
+  "w-full border border-sbs-border bg-sbs-bg px-3 py-2 text-sm text-sbs-text outline-none focus:border-sbs-black";
 
 export function QueueBoard() {
   const { ready, submissions, updateGate, publish } = useStore();
   const [notice, setNotice] = useState<Record<string, string>>({});
 
   if (!ready) {
-    return <p className="text-sm text-charcoal">Opening the founder queue…</p>;
+    return <p className="text-sm text-sbs-muted">Opening the founder queue…</p>;
   }
 
   const open = submissions.filter((item) => !item.publishedListingId);
@@ -29,7 +29,7 @@ export function QueueBoard() {
   return (
     <div className="space-y-8">
       {open.length === 0 ? (
-        <p className="text-sm text-charcoal">
+        <p className="text-sm text-sbs-ink">
           No saddles waiting on price, route, or publish.
         </p>
       ) : null}
@@ -39,16 +39,16 @@ export function QueueBoard() {
         const routeOk = Boolean(item.founderRoute);
         const gated = !(priceOk && routeOk);
         return (
-          <article key={item.id} className="border border-border bg-ivory-soft p-4">
-            <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-cognac">
+          <article key={item.id} className="border border-sbs-border bg-sbs-surface p-4">
+            <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-sbs-muted">
               Intake · {new Date(item.submittedAt).toLocaleDateString()}
             </p>
-            <h2 className="mt-1 font-serif text-2xl text-espresso">
+            <h2 className="mt-1 font-serif text-2xl text-sbs-text">
               {item.brand} {item.model} {item.seat} {item.year}
             </h2>
-            <dl className="mt-3 grid gap-2 text-sm text-charcoal">
+            <dl className="mt-3 grid gap-2 text-sm text-sbs-ink">
               <div>
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em]">
+                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                   Contact
                 </dt>
                 <dd>
@@ -56,13 +56,13 @@ export function QueueBoard() {
                 </dd>
               </div>
               <div>
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em]">
+                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                   Location
                 </dt>
                 <dd>{item.location}</dd>
               </div>
               <div>
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em]">
+                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                   Seat / flap / tree
                 </dt>
                 <dd>
@@ -70,13 +70,13 @@ export function QueueBoard() {
                 </dd>
               </div>
               <div>
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em]">
+                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                   Stamps
                 </dt>
                 <dd>{item.stamps}</dd>
               </div>
               <div>
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em]">
+                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                   Condition + wear
                 </dt>
                 <dd>
@@ -84,25 +84,25 @@ export function QueueBoard() {
                 </dd>
               </div>
               <div>
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em]">
+                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                   Service history
                 </dt>
                 <dd>{item.serviceHistory}</dd>
               </div>
               <div>
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em]">
+                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                   Price expectation
                 </dt>
                 <dd>{item.priceExpectation}</dd>
               </div>
               <div>
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em]">
+                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                   Path interest
                 </dt>
                 <dd>{item.pathInterest ? pathLabel(item.pathInterest) : "—"}</dd>
               </div>
               <div>
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em]">
+                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                   Photos
                 </dt>
                 <dd>
@@ -128,7 +128,7 @@ export function QueueBoard() {
                 })}
               </div>
             ) : (
-              <p className="mt-3 text-xs text-charcoal">
+              <p className="mt-3 text-xs text-sbs-muted">
                 Seed intake has no attached files. Live presentations store
                 angle thumbnails here.
               </p>
@@ -136,7 +136,7 @@ export function QueueBoard() {
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <label className="block space-y-1">
-                <span className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-cognac">
+                <span className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                   Jeff price
                 </span>
                 <input
@@ -150,7 +150,7 @@ export function QueueBoard() {
                 />
               </label>
               <label className="block space-y-1">
-                <span className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-cognac">
+                <span className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                   Route
                 </span>
                 <select
@@ -184,12 +184,12 @@ export function QueueBoard() {
                     : result.reason,
                 }));
               }}
-              className="mt-4 w-full bg-espresso px-4 py-3 text-sm text-ivory disabled:opacity-40"
+              className="mt-4 w-full bg-sbs-accent px-4 py-3 text-sm text-sbs-on-accent disabled:opacity-40"
             >
               {gated ? "Price and route required to publish" : "Publish"}
             </button>
             {notice[item.id] ? (
-              <p className="mt-2 text-sm text-charcoal">{notice[item.id]}</p>
+              <p className="mt-2 text-sm text-sbs-ink">{notice[item.id]}</p>
             ) : null}
           </article>
         );
@@ -197,9 +197,9 @@ export function QueueBoard() {
 
       {done.length > 0 ? (
         <section className="space-y-3">
-          <h2 className="font-serif text-xl text-espresso">Published</h2>
+          <h2 className="font-serif text-xl text-sbs-text">Published</h2>
           {done.map((item) => (
-            <p key={item.id} className="text-sm text-charcoal">
+            <p key={item.id} className="text-sm text-sbs-ink">
               {item.brand} {item.model} · {formatUsd(Number(item.founderPrice))} ·{" "}
               <Link
                 href={`/collection/${item.publishedListingId}`}

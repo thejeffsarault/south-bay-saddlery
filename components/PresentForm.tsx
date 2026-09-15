@@ -14,7 +14,7 @@ import { fileToThumb } from "@/lib/photos";
 import { emptyDraft, useStore } from "@/lib/store";
 
 const fieldClass =
-  "w-full border border-border bg-ivory-soft px-3 py-2.5 text-sm text-espresso outline-none focus:border-cognac";
+  "w-full border border-sbs-border bg-sbs-surface px-3 py-2.5 text-sm text-sbs-text outline-none focus:border-sbs-black";
 
 function Section({
   index,
@@ -28,10 +28,10 @@ function Section({
   return (
     <section className="space-y-3">
       <div>
-        <p className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-cognac">
+        <p className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-sbs-muted">
           {index}
         </p>
-        <h2 className="font-serif text-2xl text-espresso">{title}</h2>
+        <h2 className="font-serif text-2xl text-sbs-text">{title}</h2>
       </div>
       {children}
     </section>
@@ -99,7 +99,7 @@ export function PresentForm() {
     <form onSubmit={onSubmit} className="space-y-10">
       <Section index="01" title="Contact">
         <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
             Name
           </span>
           <input
@@ -111,7 +111,7 @@ export function PresentForm() {
           />
         </label>
         <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
             Email
           </span>
           <input
@@ -124,7 +124,7 @@ export function PresentForm() {
           />
         </label>
         <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
             Phone
           </span>
           <input
@@ -140,7 +140,7 @@ export function PresentForm() {
 
       <Section index="02" title="Location">
         <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
             City, state
           </span>
           <input
@@ -156,7 +156,7 @@ export function PresentForm() {
       <Section index="03" title="Brand / model / year">
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="block space-y-1">
-            <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+            <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
               Brand
             </span>
             <input
@@ -167,7 +167,7 @@ export function PresentForm() {
             />
           </label>
           <label className="block space-y-1">
-            <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+            <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
               Model
             </span>
             <input
@@ -178,7 +178,7 @@ export function PresentForm() {
             />
           </label>
           <label className="block space-y-1">
-            <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+            <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
               Year
             </span>
             <input
@@ -194,7 +194,7 @@ export function PresentForm() {
       <Section index="04" title="Seat / flap / tree">
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="block space-y-1">
-            <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+            <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
               Seat
             </span>
             <input
@@ -206,7 +206,7 @@ export function PresentForm() {
             />
           </label>
           <label className="block space-y-1">
-            <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+            <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
               Flap
             </span>
             <input
@@ -217,7 +217,7 @@ export function PresentForm() {
             />
           </label>
           <label className="block space-y-1">
-            <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+            <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
               Tree
             </span>
             <input
@@ -232,7 +232,7 @@ export function PresentForm() {
 
       <Section index="05" title="Stamps">
         <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
             Serial and flap stamps
           </span>
           <textarea
@@ -246,7 +246,7 @@ export function PresentForm() {
 
       <Section index="06" title="Condition + wear">
         <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
             Condition
           </span>
           <select
@@ -266,7 +266,7 @@ export function PresentForm() {
           </select>
         </label>
         <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-charcoal">
+          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
             Wear notes
           </span>
           <textarea
@@ -305,8 +305,8 @@ export function PresentForm() {
               key={path.id}
               className={`border px-3 py-3 text-sm ${
                 draft.pathInterest === path.id
-                  ? "border-cognac bg-ivory-soft"
-                  : "border-border"
+                  ? "border-sbs-black bg-sbs-surface"
+                  : "border-sbs-border"
               }`}
             >
               <input
@@ -325,11 +325,11 @@ export function PresentForm() {
       </Section>
 
       <Section index="10" title="Photos">
-        <p className="text-sm text-charcoal">
+        <p className="text-sm text-sbs-ink">
           At least {MIN_PHOTOS} angles. Near-side, off-side, seat, front, rear,
           flaps, billets, panels, stamps, and damage.
         </p>
-        <p className="font-mono text-xs text-cognac">
+        <p className="font-mono text-xs text-sbs-muted">
           {photosReady} / {PHOTO_ANGLES.length} attached
         </p>
         <div className="grid grid-cols-2 gap-2">
@@ -338,7 +338,7 @@ export function PresentForm() {
             return (
               <label
                 key={angle.id}
-                className="relative block aspect-[4/5] overflow-hidden border border-border bg-ivory-soft"
+                className="relative block aspect-[4/5] overflow-hidden border border-sbs-border bg-sbs-surface"
               >
                 {current?.thumb ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -348,7 +348,7 @@ export function PresentForm() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="absolute inset-0 flex items-end p-2 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-charcoal">
+                  <span className="absolute inset-0 flex items-end p-2 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                     {angle.label}
                   </span>
                 )}
@@ -365,12 +365,12 @@ export function PresentForm() {
         </div>
       </Section>
 
-      {error ? <p className="text-sm text-cognac">{error}</p> : null}
+      {error ? <p className="text-sm text-sbs-text">{error}</p> : null}
 
       <button
         type="submit"
         disabled={busy}
-        className="w-full bg-espresso px-5 py-3.5 text-sm tracking-wide text-ivory disabled:opacity-60"
+        className="w-full bg-sbs-accent px-5 py-3.5 text-sm tracking-wide text-sbs-on-accent disabled:opacity-60"
       >
         {busy ? "Sending…" : "Present Your Saddle"}
       </button>

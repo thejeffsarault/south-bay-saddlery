@@ -1,37 +1,63 @@
 @import "tailwindcss";
 
 :root {
-  --ivory: #f4efe6;
-  --ivory-soft: #faf7f1;
-  --espresso: #1c1410;
-  --charcoal: #3a342f;
-  --cognac: #8c5a32;
-  --cognac-soft: #c4a07a;
-  --brass: #b08d57;
-  --border: #d9d0c3;
+  --sbs-black: #000000;
+  --sbs-white: #ffffff;
+  --sbs-ink: #1a1a1a;
+  --sbs-muted: #6b6b6b;
+  --sbs-border: #e5e5e5;
+  --sbs-bg: var(--sbs-white);
+  --sbs-surface: var(--sbs-white);
+  --sbs-text: var(--sbs-black);
+  --sbs-text-muted: var(--sbs-muted);
+  --sbs-accent: var(--sbs-black);
+  --sbs-on-accent: var(--sbs-white);
+
+  /* Legacy leather names mapped onto the B&W lock so leftover utilities cannot reintroduce ivory/cognac/brass chrome. */
+  --ivory: var(--sbs-white);
+  --ivory-soft: var(--sbs-white);
+  --espresso: var(--sbs-black);
+  --charcoal: var(--sbs-ink);
+  --cognac: var(--sbs-muted);
+  --cognac-soft: var(--sbs-muted);
+  --brass: var(--sbs-white);
+  --border: var(--sbs-border);
 }
 
 @theme inline {
-  --color-ivory: var(--ivory);
-  --color-ivory-soft: var(--ivory-soft);
-  --color-espresso: var(--espresso);
-  --color-charcoal: var(--charcoal);
-  --color-cognac: var(--cognac);
-  --color-cognac-soft: var(--cognac-soft);
-  --color-brass: var(--brass);
-  --color-border: var(--border);
+  --color-sbs-black: var(--sbs-black);
+  --color-sbs-white: var(--sbs-white);
+  --color-sbs-ink: var(--sbs-ink);
+  --color-sbs-muted: var(--sbs-muted);
+  --color-sbs-border: var(--sbs-border);
+  --color-sbs-bg: var(--sbs-bg);
+  --color-sbs-surface: var(--sbs-surface);
+  --color-sbs-text: var(--sbs-text);
+  --color-sbs-text-muted: var(--sbs-text-muted);
+  --color-sbs-accent: var(--sbs-accent);
+  --color-sbs-on-accent: var(--sbs-on-accent);
+
+  --color-ivory: var(--sbs-white);
+  --color-ivory-soft: var(--sbs-white);
+  --color-espresso: var(--sbs-black);
+  --color-charcoal: var(--sbs-ink);
+  --color-cognac: var(--sbs-muted);
+  --color-cognac-soft: var(--sbs-muted);
+  --color-brass: var(--sbs-white);
+  --color-border: var(--sbs-border);
+
   --font-serif: var(--font-cormorant);
   --font-sans: var(--font-source-sans);
   --font-mono: var(--font-ibm-plex);
 }
 
 html {
-  background: var(--ivory);
+  background: var(--sbs-bg);
 }
 
 body {
-  background: var(--ivory);
-  color: var(--espresso);
+  background: var(--sbs-bg);
+  color: var(--sbs-text);
   font-family: var(--font-source-sans), "Source Sans 3", sans-serif;
 }
 
@@ -45,24 +71,15 @@ textarea {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--cognac-soft) 55%, white);
-  color: var(--espresso);
+  background: var(--sbs-black);
+  color: var(--sbs-white);
 }
 
 .leather-plate {
-  background:
-    radial-gradient(120% 80% at 20% 0%, color-mix(in srgb, var(--cognac-soft) 35%, transparent), transparent 46%),
-    linear-gradient(160deg, #5c3a22 0%, #3a2418 48%, #2a1912 100%);
+  background: var(--sbs-black);
 }
 
 .brass-rule {
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--brass) 18%,
-    color-mix(in srgb, var(--brass) 55%, white) 50%,
-    var(--brass) 82%,
-    transparent
-  );
+  background: var(--sbs-border);
 }
