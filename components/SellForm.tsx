@@ -1,22 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  BODY_ANGLES,
-  INTAKE_ANGLES,
-  MIN_BODY_PHOTOS,
   PATH_INTERESTS,
   SELL_COPY,
-  bodyPhotoCount,
   hasRequiredPhotos,
   type IntakeDraft,
   type PhotoAngleId,
 } from "@/lib/catalog";
 import { DRAFT_CONDITIONS } from "@/lib/bluebook/types";
 import type { BluebookProposePublic } from "@/lib/bluebook/types";
-import { PhotoActionPair, PhotoSlot } from "@/components/PhotoSlot";
+import { PhotoActionPair } from "@/components/PhotoSlot";
 import { draftDescription } from "@/lib/draft-copy";
 import { fileToThumb } from "@/lib/photos";
 import { parseVoltaireStamp, type StampToken } from "@/lib/serial/voltaire";
@@ -25,27 +20,44 @@ import { emptyDraft, useStore } from "@/lib/store";
 const fieldClass =
   "w-full border border-sbs-border bg-sbs-surface px-3 py-2.5 text-sm text-sbs-text outline-none focus:border-sbs-black";
 
-type Step = "photos" | "draft";
+const PHOTO_STEPS = [
+  { id: "photo.panels", angle: "panels", title: "Panels", helper: "Underside panels", n: 1 },
+  { id: "photo.flaps", angle: "flaps", title: "Flaps", helper: "Both flaps", n: 2 },
+  { id: "photo.underflaps", angle: "underflaps", title: "Underflaps", helper: "Under both flaps", n: 3 },
+  { id: "photo.billets", angle: "billets", title: "Billets", helper: "Billet condition", n: 4 },
+  { id: "photo.front", angle: "front", title: "Front", helper: "Pommel / front", n: 5 },
+  { id: "photo.back", angle: "back", title: "Back", helper: "Cantle / rear", n: 6 },
+  { id: "photo.serial", angle: "serial", title: "Serial / stamp", helper: "Must be readable", n: 7 },
+] as const;
 
-function nextEmptySlot(photos: IntakeDraft["photos"]): PhotoAngleId {
-  const required = INTAKE_ANGLES.filter((angle) => angle.required);
-  const open = required.find((angle) => !photos[angle.id]?.thumb);
-  return open?.id ?? "damage";
+type PhotoStepId = (typeof PHOTO_STEPS)[number]["id"];
+type StepId = "intro" | PhotoStepId | "photo.damage" | "draft" | "done";
+
+const ORDER: StepId[] = [
+  "intro",
+  ...PHOTO_STEPS.map((step) => step.id),
+  "photo.damage",
+  "draft",
+  "done",
+];
+
+function photoStep(id: StepId) {
+  return PHOTO_STEPS.find((step) => step.id === id);
 }
 
 export function SellForm() {
-  const router = useRouter();
   const { submitIntake, notifyJeff } = useStore();
   const [draft, setDraft] = useState<IntakeDraft>(emptyDraft);
-  const [step, setStep] = useState<Step>("photos");
+  const [step, setStep] = useState<StepId>("intro");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [copyDirty, setCopyDirty] = useState(false);
   const [tokens, setTokens] = useState<StampToken[]>([]);
   const [stampNote, setStampNote] = useState("");
+  const advanceRef = useRef<number | null>(null);
 
-  const bodyReady = bodyPhotoCount(draft.photos);
   const photosReady = hasRequiredPhotos(draft.photos);
+  const currentPhoto = photoStep(step);
   const proposedCopy = useMemo(
     () =>
       draftDescription({
@@ -86,10 +98,7 @@ export function SellForm() {
     if (!brand || !year) {
       setDraft((current) =>
         current.needsJeffReview || current.priceExpectation
-          ? {
-              ...current,
-              needsJeffReview: !current.priceExpectation,
-            }
+          ? { ...current, needsJeffReview: !current.priceExpectation }
           : current,
       );
       return;
@@ -153,28 +162,48 @@ export function SellForm() {
     draft.pathInterest,
   ]);
 
+  useEffect(() => {
+    return () => {
+      if (advanceRef.current) window.clearTimeout(advanceRef.current);
+    };
+  }, []);
+
   function update<K extends keyof IntakeDraft>(key: K, value: IntakeDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
-  async function assignFiles(files: FileList | File[] | null, slot?: PhotoAngleId) {
-    if (!files || files.length === 0) return;
-    const list = Array.from(files);
-    let photos = { ...draft.photos };
-    for (const file of list) {
-      const angle = slot && list.length === 1 ? slot : nextEmptySlot(photos);
-      const thumb = await fileToThumb(file);
-      photos = { ...photos, [angle]: thumb };
+  function go(next: StepId) {
+    setError("");
+    if (advanceRef.current) {
+      window.clearTimeout(advanceRef.current);
+      advanceRef.current = null;
     }
-    setDraft((current) => ({ ...current, photos }));
+    setStep(next);
   }
 
-  function clearPhoto(id: PhotoAngleId) {
-    setDraft((current) => {
-      const photos = { ...current.photos };
-      delete photos[id];
-      return { ...current, photos };
-    });
+  function goNext() {
+    const index = ORDER.indexOf(step);
+    if (index >= 0 && index < ORDER.length - 1) go(ORDER[index + 1]);
+  }
+
+  function goBack() {
+    const index = ORDER.indexOf(step);
+    if (index > 0) go(ORDER[index - 1]);
+  }
+
+  async function attachPhoto(angle: PhotoAngleId, files: FileList | File[] | null) {
+    const file = files?.[0];
+    if (!file) return;
+    const thumb = await fileToThumb(file);
+    setDraft((current) => ({
+      ...current,
+      photos: { ...current.photos, [angle]: thumb },
+    }));
+    if (advanceRef.current) window.clearTimeout(advanceRef.current);
+    advanceRef.current = window.setTimeout(() => {
+      const index = ORDER.indexOf(step);
+      if (index >= 0 && index < ORDER.length - 1) setStep(ORDER[index + 1]);
+    }, 400);
   }
 
   function applyStamp(value: string) {
@@ -185,7 +214,7 @@ export function SellForm() {
       if (!parsed.confident) {
         setStampNote(
           value.trim()
-            ? "Could not decode this stamp. Enter the fields below — we do not invent a read."
+            ? "Could not decode this stamp. Enter details on the draft — we do not invent a read."
             : "",
         );
         return next;
@@ -210,25 +239,12 @@ export function SellForm() {
     });
   }
 
-  function goDraft() {
-    setError("");
-    if (!photosReady) {
-      setError(
-        `${MIN_BODY_PHOTOS} angles plus a serial / stamp photo are required.`,
-      );
-      return;
-    }
-    setStep("draft");
-  }
-
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
     if (!photosReady) {
-      setError(
-        `${MIN_BODY_PHOTOS} angles plus a serial / stamp photo are required.`,
-      );
-      setStep("photos");
+      setError("Six angles and a serial / stamp photo are required.");
+      go("photo.panels");
       return;
     }
     if (!draft.contactName.trim() || !draft.email.trim()) {
@@ -252,111 +268,200 @@ export function SellForm() {
     } catch {
       // Queue still holds the pending listing if notify/label stubs fail.
     }
-    router.push(
-      `/sell/received?id=${encodeURIComponent(submission.id)}&path=${encodeURIComponent(
-        draft.pathInterest || "self-serve",
-      )}`,
-    );
+    setBusy(false);
+    go("done");
   }
 
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== "Enter" || event.shiftKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT")) {
+        return;
+      }
+      if (currentPhoto && draft.photos[currentPhoto.angle]?.thumb) {
+        event.preventDefault();
+        const index = ORDER.indexOf(step);
+        if (index >= 0 && index < ORDER.length - 1) setStep(ORDER[index + 1]);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [currentPhoto, draft.photos, step]);
+
   return (
-    <form onSubmit={onSubmit} className="space-y-8">
-      {step === "photos" ? (
-        <section className="space-y-5">
-          <div
-            className="flex min-h-[16rem] w-full flex-col items-center justify-center border border-sbs-border bg-sbs-white px-6 py-10 text-center"
-            onDragOver={(e) => {
-              e.preventDefault();
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              void assignFiles(e.dataTransfer.files);
-            }}
-          >
-            <PhotoActionPair
-              id="bulk"
-              align="center"
-              libraryMultiple
-              onCamera={(files) => void assignFiles(files)}
-              onLibrary={(files) => void assignFiles(files)}
-            />
-            <p className="mt-4 text-sm text-sbs-muted">
-              {MIN_BODY_PHOTOS} angles + serial
-            </p>
-          </div>
-
-          <div className="flex items-end justify-between gap-3">
-            <p className="font-mono text-[var(--sbs-text-meta)] text-sbs-muted">
-              {bodyReady} / {BODY_ANGLES.length}
-              {draft.photos.serial?.thumb ? " · serial on file" : " · serial needed"}
-            </p>
-            <Link
-              href="/sell/photo-tips"
-              className="text-[var(--sbs-text-meta)] text-sbs-muted underline-offset-4 hover:text-sbs-black hover:underline"
-            >
-              Photo tips
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {INTAKE_ANGLES.map((angle) => (
-              <PhotoSlot
-                key={angle.id}
-                id={angle.id}
-                label={angle.label}
-                emphasized={angle.id === "serial"}
-                thumb={draft.photos[angle.id]?.thumb}
-                onCamera={(files) => void assignFiles(files, angle.id)}
-                onLibrary={(files) => void assignFiles(files, angle.id)}
-                onClear={() => clearPhoto(angle.id)}
-              />
-            ))}
-          </div>
-
-          {error ? <p className="text-sm text-sbs-text">{error}</p> : null}
-
+    <form
+      onSubmit={onSubmit}
+      className="flex min-h-[calc(100dvh-8rem)] flex-col"
+    >
+      <div className="flex items-center justify-between gap-3">
+        {step !== "intro" && step !== "done" ? (
           <button
             type="button"
-            onClick={goDraft}
-            disabled={!photosReady}
-            className="w-full bg-sbs-accent px-5 py-3.5 text-sm tracking-wide text-sbs-on-accent disabled:opacity-40"
+            onClick={goBack}
+            className="text-[var(--sbs-text-meta)] text-sbs-muted"
           >
-            {SELL_COPY.continue}
+            {SELL_COPY.back}
           </button>
-        </section>
-      ) : (
-        <section className="space-y-6">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <h2 className="font-serif text-2xl font-medium text-sbs-text">
-                Draft review
-              </h2>
-              <p className="mt-1 text-sm text-sbs-muted">
-                Paste the stamp as printed.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setStep("photos")}
-              className="text-[var(--sbs-text-meta)] text-sbs-muted underline-offset-4 hover:underline"
-            >
-              Photos
-            </button>
-          </div>
+        ) : (
+          <span />
+        )}
+        {currentPhoto ? (
+          <p className="font-mono text-[var(--sbs-text-meta)] text-sbs-muted">
+            {currentPhoto.n} / 7
+          </p>
+        ) : (
+          <span />
+        )}
+      </div>
 
-          <label className="block space-y-1">
-            <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
-              Stamp
-            </span>
-            <textarea
-              className={`${fieldClass} min-h-24`}
-              value={draft.stamps}
-              onChange={(e) => applyStamp(e.target.value)}
-              placeholder="PB 16.5 2A M/M C/C FIN #17 23.23"
-            />
-          </label>
-          {tokens.length ? (
-            <div className="flex flex-wrap gap-1.5">
+      <div key={step} className="sbs-step flex flex-1 flex-col justify-center py-8">
+        {step === "intro" ? <IntroStep onStart={goNext} /> : null}
+
+        {currentPhoto ? (
+          <PhotoAsk
+            title={currentPhoto.title}
+            helper={currentPhoto.helper}
+            angle={currentPhoto.angle}
+            thumb={draft.photos[currentPhoto.angle]?.thumb}
+            stamp={step === "photo.serial"}
+            stamps={draft.stamps}
+            tokens={tokens}
+            stampNote={stampNote}
+            onFiles={(files) => void attachPhoto(currentPhoto.angle, files)}
+            onStamp={applyStamp}
+            onContinue={goNext}
+          />
+        ) : null}
+
+        {step === "photo.damage" ? (
+          <PhotoAsk
+            title="Damage?"
+            helper="Any damage close-up"
+            angle="damage"
+            thumb={draft.photos.damage?.thumb}
+            onFiles={(files) => void attachPhoto("damage", files)}
+            onContinue={goNext}
+            onSkip={goNext}
+          />
+        ) : null}
+
+        {step === "draft" ? (
+          <DraftStep
+            draft={draft}
+            tokens={tokens}
+            stampNote={stampNote}
+            error={error}
+            busy={busy}
+            onUpdate={update}
+            onStamp={applyStamp}
+            onEditPhotos={() => go("photo.panels")}
+            onCopyDirty={() => setCopyDirty(true)}
+          />
+        ) : null}
+
+        {step === "done" ? <DoneStep /> : null}
+      </div>
+    </form>
+  );
+}
+
+function IntroStep({ onStart }: { onStart: () => void }) {
+  return (
+    <div className="space-y-6">
+      <h1
+        className="font-serif font-medium leading-[1.1] text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        {SELL_COPY.headline}
+      </h1>
+      <p className="text-lg text-sbs-text">{SELL_COPY.microcopy}</p>
+      <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
+        {SELL_COPY.secondary}
+      </p>
+      <Link
+        href="/sell/photo-tips"
+        className="inline-block text-[var(--sbs-text-meta)] text-sbs-muted underline-offset-4 hover:underline"
+      >
+        Photo tips
+      </Link>
+      <button
+        type="button"
+        onClick={onStart}
+        className="w-full bg-sbs-accent px-5 py-3.5 text-sm tracking-wide text-sbs-on-accent"
+      >
+        {SELL_COPY.start}
+      </button>
+    </div>
+  );
+}
+
+function PhotoAsk({
+  title,
+  helper,
+  angle,
+  thumb,
+  stamp,
+  stamps,
+  tokens,
+  stampNote,
+  onFiles,
+  onStamp,
+  onContinue,
+  onSkip,
+}: {
+  title: string;
+  helper: string;
+  angle: PhotoAngleId;
+  thumb?: string;
+  stamp?: boolean;
+  stamps?: string;
+  tokens?: StampToken[];
+  stampNote?: string;
+  onFiles: (files: FileList | null) => void;
+  onStamp?: (value: string) => void;
+  onContinue: () => void;
+  onSkip?: () => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2
+          className="font-serif font-medium text-sbs-text"
+          style={{ fontSize: "var(--sbs-text-hero)" }}
+        >
+          {title}
+        </h2>
+        <p className="mt-2 text-sbs-muted">{helper}</p>
+      </div>
+
+      {thumb ? (
+        <div className="relative overflow-hidden border border-sbs-border">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={thumb} alt="" className="max-h-64 w-full object-cover" />
+        </div>
+      ) : null}
+
+      <PhotoActionPair
+        id={`step-${angle}`}
+        variant="hero"
+        onCamera={onFiles}
+        onLibrary={onFiles}
+      />
+
+      {stamp ? (
+        <label className="block space-y-1">
+          <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
+            Stamp
+          </span>
+          <textarea
+            className={`${fieldClass} min-h-24`}
+            value={stamps ?? ""}
+            onChange={(e) => onStamp?.(e.target.value)}
+            placeholder="PB 16.5 2A M/M C/C FIN #17 23.23"
+          />
+          {tokens?.length ? (
+            <div className="flex flex-wrap gap-1.5 pt-2">
               {tokens.map((token, index) => (
                 <span
                   key={`${token.raw}-${index}`}
@@ -367,127 +472,230 @@ export function SellForm() {
               ))}
             </div>
           ) : null}
-          {stampNote ? (
-            <p className="text-sm text-sbs-muted">{stampNote}</p>
-          ) : null}
+          {stampNote ? <p className="text-sm text-sbs-muted">{stampNote}</p> : null}
+        </label>
+      ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Brand" value={draft.brand} onChange={(v) => update("brand", v)} />
-            <Field label="Model" value={draft.model} onChange={(v) => update("model", v)} />
-            <Field label="Year" value={draft.year} onChange={(v) => update("year", v)} />
-            <Field label="Seat" value={draft.seat} onChange={(v) => update("seat", v)} />
-            <Field label="Flap" value={draft.flap} onChange={(v) => update("flap", v)} />
-            <Field label="Panel" value={draft.panel} onChange={(v) => update("panel", v)} />
-            <Field label="Serial" value={draft.serial} onChange={(v) => update("serial", v)} />
-            <label className="block space-y-1">
-              <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
-                Condition
-              </span>
-              <select
-                className={fieldClass}
-                value={draft.condition}
-                onChange={(e) =>
-                  update("condition", e.target.value as IntakeDraft["condition"])
-                }
-              >
-                <option value="">Select</option>
-                {DRAFT_CONDITIONS.map((condition) => (
-                  <option key={condition} value={condition}>
-                    {condition}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block space-y-1">
-              <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
-                Proposed list
-              </span>
-              <input
-                className={fieldClass}
-                inputMode="decimal"
-                value={draft.priceExpectation}
-                onChange={(e) => {
-                  update("priceExpectation", e.target.value);
-                  update("needsJeffReview", !e.target.value.trim());
-                }}
-                placeholder={draft.needsJeffReview ? "Founder will price" : ""}
-              />
-            </label>
-          </div>
+      {thumb ? (
+        <button
+          type="button"
+          onClick={onContinue}
+          className="w-full bg-sbs-accent px-5 py-3.5 text-sm tracking-wide text-sbs-on-accent"
+        >
+          {SELL_COPY.continue}
+        </button>
+      ) : null}
 
-          {draft.needsJeffReview ? (
-            <p className="text-sm text-sbs-muted">
-              No Blue Book match. Founder will price — no estimate invented.
-            </p>
-          ) : draft.priceExpectation ? (
-            <p className="text-sm text-sbs-muted">Blue Book draft price.</p>
-          ) : null}
+      {onSkip ? (
+        <button
+          type="button"
+          onClick={onSkip}
+          className="w-full text-sm text-sbs-muted"
+        >
+          {SELL_COPY.damageSkip}
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
-          <label className="block space-y-1">
-            <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
-              Description
+function DraftStep({
+  draft,
+  tokens,
+  stampNote,
+  error,
+  busy,
+  onUpdate,
+  onStamp,
+  onEditPhotos,
+  onCopyDirty,
+}: {
+  draft: IntakeDraft;
+  tokens: StampToken[];
+  stampNote: string;
+  error: string;
+  busy: boolean;
+  onUpdate: <K extends keyof IntakeDraft>(key: K, value: IntakeDraft[K]) => void;
+  onStamp: (value: string) => void;
+  onEditPhotos: () => void;
+  onCopyDirty: () => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <h2
+        className="font-serif font-medium text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        Your draft
+      </h2>
+
+      <label className="block space-y-1">
+        <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
+          Stamp
+        </span>
+        <textarea
+          className={`${fieldClass} min-h-24`}
+          value={draft.stamps}
+          onChange={(e) => onStamp(e.target.value)}
+          placeholder="PB 16.5 2A M/M C/C FIN #17 23.23"
+        />
+      </label>
+      {tokens.length ? (
+        <div className="flex flex-wrap gap-1.5">
+          {tokens.map((token, index) => (
+            <span
+              key={`${token.raw}-${index}`}
+              className="border border-sbs-border px-2 py-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-sbs-muted"
+            >
+              {token.kind} {token.raw}
             </span>
-            <textarea
-              className={`${fieldClass} min-h-24`}
-              value={draft.description}
-              onChange={(e) => {
-                setCopyDirty(true);
-                update("description", e.target.value);
-              }}
-            />
-          </label>
+          ))}
+        </div>
+      ) : null}
+      {stampNote ? <p className="text-sm text-sbs-muted">{stampNote}</p> : null}
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field
-              label="Name"
-              value={draft.contactName}
-              onChange={(v) => update("contactName", v)}
-              autoComplete="name"
-            />
-            <Field
-              label="Email"
-              value={draft.email}
-              onChange={(v) => update("email", v)}
-              type="email"
-              autoComplete="email"
-            />
-          </div>
-
-          <div className="grid gap-2">
-            {PATH_INTERESTS.map((path) => (
-              <label
-                key={path.id}
-                className={`border px-3 py-3 text-sm ${
-                  draft.pathInterest === path.id
-                    ? "border-sbs-black"
-                    : "border-sbs-border"
-                }`}
-              >
-                <input
-                  type="radio"
-                  className="sr-only"
-                  name="path"
-                  value={path.id}
-                  checked={draft.pathInterest === path.id}
-                  onChange={() => update("pathInterest", path.id)}
-                />
-                <span className="block">{path.label}</span>
-              </label>
-            ))}
-          </div>
-
-          {error ? <p className="text-sm text-sbs-text">{error}</p> : null}
-
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full bg-sbs-accent px-5 py-3.5 text-sm tracking-wide text-sbs-on-accent disabled:opacity-60"
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Brand" value={draft.brand} onChange={(v) => onUpdate("brand", v)} />
+        <Field label="Model" value={draft.model} onChange={(v) => onUpdate("model", v)} />
+        <Field label="Year" value={draft.year} onChange={(v) => onUpdate("year", v)} />
+        <Field label="Seat" value={draft.seat} onChange={(v) => onUpdate("seat", v)} />
+        <Field label="Flap" value={draft.flap} onChange={(v) => onUpdate("flap", v)} />
+        <Field label="Panel" value={draft.panel} onChange={(v) => onUpdate("panel", v)} />
+        <Field label="Serial" value={draft.serial} onChange={(v) => onUpdate("serial", v)} />
+        <label className="block space-y-1">
+          <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
+            Condition
+          </span>
+          <select
+            className={fieldClass}
+            value={draft.condition}
+            onChange={(e) =>
+              onUpdate("condition", e.target.value as IntakeDraft["condition"])
+            }
           >
-            {busy ? "Sending…" : SELL_COPY.cta}
-          </button>
-        </section>
-      )}
-    </form>
+            <option value="">Select</option>
+            {DRAFT_CONDITIONS.map((condition) => (
+              <option key={condition} value={condition}>
+                {condition}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block space-y-1 sm:col-span-2">
+          <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
+            Proposed list
+          </span>
+          <input
+            className={fieldClass}
+            inputMode="decimal"
+            value={draft.priceExpectation}
+            onChange={(e) => {
+              onUpdate("priceExpectation", e.target.value);
+              onUpdate("needsJeffReview", !e.target.value.trim());
+            }}
+            placeholder={draft.needsJeffReview ? "Founder will price" : ""}
+          />
+        </label>
+      </div>
+
+      {draft.needsJeffReview ? (
+        <p className="text-sm text-sbs-muted">
+          No Blue Book match. Founder will price — no estimate invented.
+        </p>
+      ) : draft.priceExpectation ? (
+        <p className="text-sm text-sbs-muted">Blue Book draft price.</p>
+      ) : null}
+
+      <label className="block space-y-1">
+        <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
+          Description
+        </span>
+        <textarea
+          className={`${fieldClass} min-h-24`}
+          value={draft.description}
+          onChange={(e) => {
+            onCopyDirty();
+            onUpdate("description", e.target.value);
+          }}
+        />
+      </label>
+
+      <div className="grid gap-3">
+        <Field
+          label="Name"
+          value={draft.contactName}
+          onChange={(v) => onUpdate("contactName", v)}
+          autoComplete="name"
+        />
+        <Field
+          label="Email"
+          value={draft.email}
+          onChange={(v) => onUpdate("email", v)}
+          type="email"
+          autoComplete="email"
+        />
+      </div>
+
+      <div className="grid gap-2">
+        {PATH_INTERESTS.map((path) => (
+          <label
+            key={path.id}
+            className={`border px-3 py-3 text-sm ${
+              draft.pathInterest === path.id
+                ? "border-sbs-black"
+                : "border-sbs-border"
+            }`}
+          >
+            <input
+              type="radio"
+              className="sr-only"
+              name="path"
+              value={path.id}
+              checked={draft.pathInterest === path.id}
+              onChange={() => onUpdate("pathInterest", path.id)}
+            />
+            <span className="block">{path.label}</span>
+          </label>
+        ))}
+      </div>
+
+      {error ? <p className="text-sm text-sbs-text">{error}</p> : null}
+
+      <button
+        type="submit"
+        disabled={busy}
+        className="w-full bg-sbs-accent px-5 py-3.5 text-sm tracking-wide text-sbs-on-accent disabled:opacity-60"
+      >
+        {busy ? "Sending…" : SELL_COPY.cta}
+      </button>
+      <button
+        type="button"
+        onClick={onEditPhotos}
+        className="w-full text-sm text-sbs-muted"
+      >
+        {SELL_COPY.editPhotos}
+      </button>
+    </div>
+  );
+}
+
+function DoneStep() {
+  return (
+    <div className="space-y-6">
+      <h2
+        className="font-serif font-medium text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        {SELL_COPY.done}
+      </h2>
+      <p className="text-sbs-muted">{SELL_COPY.doneBody}</p>
+      <Link
+        href="/collection"
+        className="inline-block w-full bg-sbs-accent px-5 py-3.5 text-center text-sm tracking-wide text-sbs-on-accent"
+      >
+        {SELL_COPY.collection}
+      </Link>
+    </div>
   );
 }
 

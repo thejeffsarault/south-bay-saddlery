@@ -58,11 +58,18 @@ export const SELL_COPY = {
   headline: "Sell Your Saddle",
   microcopy: "Upload photos — we draft the listing.",
   secondary: "Founder reviews before live",
+  start: "Start",
+  continue: "Continue",
   cta: "Submit for review",
-  continue: "Upload & continue",
+  back: "Back",
   takePhoto: "Take photo",
   fromLibrary: "Choose from library",
   fromFiles: "Choose from files",
+  damageSkip: "Skip — none",
+  editPhotos: "Edit photos",
+  done: "Submitted",
+  doneBody: "Founder will review",
+  collection: "Back to Collection",
 } as const;
 
 export type Condition = (typeof CONDITIONS)[number];

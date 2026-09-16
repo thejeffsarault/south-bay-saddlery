@@ -3,8 +3,10 @@
 import { useRef } from "react";
 import { SELL_COPY, type PhotoAngleId } from "@/lib/catalog";
 
-const actionClass =
-  "w-full px-2.5 py-2.5 text-left text-sm leading-snug text-sbs-text";
+const actionClass = {
+  plain: "w-full px-2.5 py-2.5 text-left text-sm leading-snug text-sbs-text",
+  hero: "w-full border border-sbs-border bg-sbs-white px-5 py-6 text-left text-base text-sbs-text",
+} as const;
 
 function ChooseFromLabel() {
   return (
@@ -19,12 +21,14 @@ function FileTrigger({
   id,
   capture,
   multiple,
+  variant = "plain",
   children,
   onFiles,
 }: {
   id: string;
   capture?: boolean;
   multiple?: boolean;
+  variant?: keyof typeof actionClass;
   children: React.ReactNode;
   onFiles: (files: FileList | null) => void;
 }) {
@@ -34,7 +38,7 @@ function FileTrigger({
     <>
       <button
         type="button"
-        className={actionClass}
+        className={actionClass[variant]}
         onClick={() => inputRef.current?.click()}
       >
         {children}
@@ -61,26 +65,34 @@ export function PhotoActionPair({
   id,
   libraryMultiple = false,
   align = "start",
+  variant = "plain",
   onCamera,
   onLibrary,
 }: {
   id: string;
   libraryMultiple?: boolean;
   align?: "start" | "center";
+  variant?: keyof typeof actionClass;
   onCamera: (files: FileList | null) => void;
   onLibrary: (files: FileList | null) => void;
 }) {
   const centered = align === "center";
   return (
     <div
-      className={`flex w-full flex-col ${centered ? "items-center text-center" : "items-stretch"}`}
+      className={`flex w-full flex-col gap-2 ${centered ? "items-center text-center" : "items-stretch"}`}
     >
-      <FileTrigger id={`${id}-camera`} capture onFiles={onCamera}>
+      <FileTrigger
+        id={`${id}-camera`}
+        capture
+        variant={variant}
+        onFiles={onCamera}
+      >
         {SELL_COPY.takePhoto}
       </FileTrigger>
       <FileTrigger
         id={`${id}-library`}
         multiple={libraryMultiple}
+        variant={variant}
         onFiles={onLibrary}
       >
         <ChooseFromLabel />
