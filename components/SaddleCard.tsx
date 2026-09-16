@@ -16,7 +16,7 @@ export function SaddleCard({
         src={listing.heroSrc}
         alt={cardTitle(listing)}
         className="mb-3 aspect-[4/5] bg-sbs-white"
-        contain={false}
+        contain
         priority={priority}
       />
       <h2 className="truncate text-[var(--sbs-text-title)] leading-snug text-sbs-text">
