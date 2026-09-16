@@ -15,7 +15,7 @@ export function SaddleCard({
       <ListingPhoto
         src={listing.heroSrc}
         alt={cardTitle(listing)}
-        className="mb-3 aspect-[4/5] bg-sbs-white"
+        className="mb-3 aspect-[4/5] w-full shrink-0 bg-sbs-white"
         contain
         priority={priority}
       />

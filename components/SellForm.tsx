@@ -10,7 +10,9 @@ import {
   type PhotoThumb,
 } from "@/lib/catalog";
 import type { BluebookProposePublic } from "@/lib/bluebook/types";
+import { AngleGuide } from "@/components/AngleGuide";
 import { PhotoActionPair } from "@/components/PhotoSlot";
+import { SELL_GUIDE_LINE, type SellGuideId } from "@/lib/sell-guides";
 import { draftDescription } from "@/lib/draft-copy";
 import { fileToThumb } from "@/lib/photos";
 import {
@@ -498,14 +500,21 @@ function PhotoAsk({
   stampNote?: string;
   onStamp?: (value: string) => void;
 }) {
+  const guideId = angle as SellGuideId;
+  const line = SELL_GUIDE_LINE[guideId];
+
   return (
-    <div className="space-y-14">
-      <h2
-        className="font-serif font-medium text-sbs-text"
-        style={{ fontSize: "var(--sbs-text-hero)" }}
-      >
-        {title}
-      </h2>
+    <div className="space-y-10">
+      <div className="space-y-5">
+        <AngleGuide id={guideId} />
+        <h2
+          className="font-serif font-medium text-sbs-text"
+          style={{ fontSize: "var(--sbs-text-hero)" }}
+        >
+          {title}
+        </h2>
+        {line ? <p className="text-base leading-7 text-sbs-text">{line}</p> : null}
+      </div>
 
       {thumb ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -574,25 +583,31 @@ function UnderStep({
   allowContinue?: boolean;
 }) {
   return (
-    <div className="space-y-14">
-      <h2
-        className="font-serif font-medium text-sbs-text"
-        style={{ fontSize: "var(--sbs-text-hero)" }}
-      >
-        Under
-      </h2>
+    <div className="space-y-12">
+      <div className="space-y-5">
+        <AngleGuide id="panels" />
+        <h2
+          className="font-serif font-medium text-sbs-text"
+          style={{ fontSize: "var(--sbs-text-hero)" }}
+        >
+          Under
+        </h2>
+      </div>
       <div className="space-y-10">
         <UnderSlot
           id="panels"
           label="Panels"
+          line={SELL_GUIDE_LINE.panels}
           thumb={panels}
           onFiles={onPanels}
         />
         <UnderSlot
           id="billets"
           label="Billets"
+          line={SELL_GUIDE_LINE.billets}
           thumb={billets}
           onFiles={onBillets}
+          companion
         />
       </div>
       {allowContinue ? (
@@ -611,17 +626,27 @@ function UnderStep({
 function UnderSlot({
   id,
   label,
+  line,
   thumb,
   onFiles,
+  companion,
 }: {
-  id: string;
+  id: SellGuideId;
   label: string;
+  line: string;
   thumb?: string;
   onFiles: (files: FileList | null) => void;
+  companion?: boolean;
 }) {
   return (
     <div className="space-y-4 border-b border-sbs-border pb-8 last:border-b-0 last:pb-0">
-      <p className="text-sm text-sbs-text">{label}</p>
+      <div className="flex items-start gap-3">
+        {companion ? <AngleGuide id={id} size="slot" /> : null}
+        <div className="space-y-2">
+          <p className="text-sm text-sbs-text">{label}</p>
+          <p className="text-base leading-7 text-sbs-text">{line}</p>
+        </div>
+      </div>
       {thumb ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={thumb} alt="" className="max-h-40 w-full object-contain" />
