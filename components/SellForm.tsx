@@ -23,6 +23,9 @@ import { emptyDraft, useStore } from "@/lib/store";
 const fieldClass =
   "w-full border-0 border-b border-sbs-border bg-transparent px-0 py-2 text-sm text-sbs-text outline-none focus:border-sbs-black";
 
+const sellCtaClass =
+  "inline-flex w-full max-w-[220px] items-center justify-center rounded-full bg-sbs-accent px-8 py-4 text-sm font-medium tracking-wide text-sbs-on-accent disabled:opacity-60";
+
 const SINGLE_STEPS = [
   { id: "photo.side", angle: "side", title: "Side", n: 1 },
   { id: "photo.other", angle: "other", title: "Other side", n: 2 },
@@ -444,22 +447,29 @@ export function SellForm({ demo = false }: { demo?: boolean }) {
 
 function IntroStep({ onStart }: { onStart: () => void }) {
   return (
-    <div className="space-y-16">
-      <div className="space-y-6">
-        <h1
-          className="font-serif font-medium leading-[1.1] text-sbs-text"
-          style={{ fontSize: "var(--sbs-text-hero)" }}
-        >
-          {SELL_COPY.headline}
-        </h1>
-        <p className="text-lg text-sbs-text">{SELL_COPY.microcopy}</p>
-      </div>
-      <button
-        type="button"
-        onClick={onStart}
-        className="rounded-full bg-sbs-accent px-8 py-3 text-sm tracking-wide text-sbs-on-accent"
+    <div className="flex flex-col items-center px-2 py-6 text-center">
+      <p
+        aria-hidden
+        className="font-mono text-[var(--sbs-text-meta)] tracking-[0.36em] text-sbs-muted"
       >
-        {SELL_COPY.start}
+        1 · 2 · 3
+      </p>
+      <h1
+        className="mt-10 font-serif font-medium leading-[1.12] tracking-[0.02em] text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        {SELL_COPY.headline}
+      </h1>
+      <div className="mt-8 space-y-2 text-lg leading-8 text-sbs-text">
+        <p>{SELL_COPY.beat1}</p>
+        <p>{SELL_COPY.beat2}</p>
+        <p>{SELL_COPY.beat3}</p>
+      </div>
+      <p className="mt-6 text-[var(--sbs-text-meta)] text-sbs-muted">
+        {SELL_COPY.time}
+      </p>
+      <button type="button" onClick={onStart} className={`${sellCtaClass} mt-14`}>
+        {SELL_COPY.begin}
       </button>
     </div>
   );
@@ -742,11 +752,7 @@ function DraftStep({
 
       {error ? <p className="text-sm text-sbs-text">{error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={busy}
-        className="rounded-full bg-sbs-accent px-8 py-3 text-sm tracking-wide text-sbs-on-accent disabled:opacity-60"
-      >
+      <button type="submit" disabled={busy} className={sellCtaClass}>
         {busy ? "Sending…" : SELL_COPY.cta}
       </button>
     </div>
@@ -762,10 +768,7 @@ function DoneStep() {
       >
         {SELL_COPY.done}
       </h2>
-      <Link
-        href="/collection"
-        className="inline-block rounded-full bg-sbs-accent px-8 py-3 text-sm tracking-wide text-sbs-on-accent"
-      >
+      <Link href="/collection" className={sellCtaClass}>
         {SELL_COPY.collection}
       </Link>
     </div>

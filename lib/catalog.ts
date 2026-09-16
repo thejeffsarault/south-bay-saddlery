@@ -63,9 +63,11 @@ export const CONDITIONS = [
 
 export const SELL_COPY = {
   headline: "Sell Your Saddle",
-  microcopy: "Upload photos — we draft the listing.",
-  secondary: "Founder reviews before live",
-  start: "Start",
+  beat1: "Photos in.",
+  beat2: "We write the listing.",
+  beat3: "You review & send.",
+  time: "About five minutes.",
+  begin: "Begin",
   continue: "Continue",
   cta: "Submit",
   skip: "Skip",
