@@ -22,9 +22,6 @@ export function SaddleCard({
       <h2 className="truncate text-[var(--sbs-text-title)] leading-snug text-sbs-text">
         {cardTitle(listing)}
       </h2>
-      <p className="mt-0.5 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
-        {listing.sku}
-      </p>
       <p className="mt-1 text-[var(--sbs-text-title)] text-sbs-text">
         {formatUsd(listing.price)}
       </p>

@@ -40,96 +40,100 @@ export function DetailsView({ id }: { id: string }) {
 
   return (
     <article>
-      <ProductGallery
-        labels={listing.photoLabels}
-        photoSrcs={listing.photoSrcs}
-      />
+      <div className="lg:mx-auto lg:grid lg:max-w-[var(--sbs-max)] lg:grid-cols-2 lg:items-start lg:gap-12 lg:px-[var(--sbs-page-pad-x-md)] lg:pt-8">
+        <ProductGallery
+          labels={listing.photoLabels}
+          photoSrcs={listing.photoSrcs}
+        />
 
-      <div className="sbs-page space-y-8 !pt-5">
-        <header className="space-y-3">
-          <h1 className="text-[var(--sbs-text-title)] leading-snug text-sbs-text sm:text-xl">
-            {listing.name}
-          </h1>
-          <p className="text-2xl tracking-tight text-sbs-text">
-            {formatUsd(listing.price)}
-          </p>
-          <ListingBadges
-            verified={listing.verified}
-            southBaySelect={listing.southBaySelect}
-            selfServe={listing.route === "self-serve"}
-          />
-          <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
-            {conditionLine(listing)}
-          </p>
-          <BuyCta
-            listingId={listing.id}
-            listingName={listing.name}
-            price={listing.price}
-          />
-        </header>
-
-        <details className="border-y border-sbs-border py-3">
-          <summary className="cursor-pointer text-sm text-sbs-text">
-            Specs
-          </summary>
-          <dl className="mt-4 grid gap-4 text-sm">
-            <Fact label="Brand" value={listing.brand} />
-            <Fact label="Model" value={listing.model} />
-            <Fact label="Year" value={listing.year} />
-            <Fact label="Seat" value={listing.seat} />
-            <Fact label="Flap" value={listing.flap} />
-            <Fact label="Tree" value={listing.tree} />
-            {listing.blocks ? <Fact label="Blocks" value={listing.blocks} /> : null}
-            {listing.proNotes ? <Fact label="PRO" value={listing.proNotes} /> : null}
-            <Fact label="Stamps" value={listing.stamps} mono />
-            <Fact label="Serial" value={listing.serial} mono />
-            <Fact label="Path" value={pathLabel(listing.route)} />
-            <Fact label="Discipline" value={listing.discipline} />
-          </dl>
-        </details>
-
-        {wear ? (
-          <section className="space-y-2">
-            <h2 className="text-sm text-sbs-text">Wear</h2>
-            <p className="text-sm leading-relaxed text-sbs-ink">{wear}</p>
-          </section>
-        ) : null}
-
-        {(listing.verified || listing.southBaySelect) && (
-          <details>
-            <summary className="cursor-pointer text-[var(--sbs-text-meta)] text-sbs-muted">
-              About Verified
-            </summary>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-sbs-ink">
-              Verified saddles are founder-reviewed and ship through escrow.
-              South Bay Select is founder-chosen stock. Shipping only — no
-              walk-ins.
+        <div className="sbs-page space-y-5 !pt-5 lg:sticky lg:top-20 lg:max-w-none lg:px-0 lg:py-0">
+          <header className="space-y-3">
+            <h1 className="text-[var(--sbs-text-title)] leading-snug text-sbs-text sm:text-xl">
+              {listing.name}
+            </h1>
+            <p className="text-2xl tracking-tight text-sbs-text">
+              {formatUsd(listing.price)}
             </p>
+            <ListingBadges
+              verified={listing.verified}
+              southBaySelect={listing.southBaySelect}
+              selfServe={listing.route === "self-serve"}
+            />
+            <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
+              {conditionLine(listing)}
+            </p>
+            <BuyCta
+              listingId={listing.id}
+              listingName={listing.name}
+              price={listing.price}
+            />
+          </header>
+
+          <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
+            {FULFILLMENT_LINE}
+          </p>
+
+          <details className="border-y border-sbs-border py-3">
+            <summary className="cursor-pointer text-sm text-sbs-text">
+              Specs
+            </summary>
+            <dl className="mt-4 grid gap-4 text-sm">
+              <Fact label="Brand" value={listing.brand} />
+              <Fact label="Model" value={listing.model} />
+              <Fact label="Year" value={listing.year} />
+              <Fact label="Seat" value={listing.seat} />
+              <Fact label="Flap" value={listing.flap} />
+              <Fact label="Tree" value={listing.tree} />
+              {listing.blocks ? <Fact label="Blocks" value={listing.blocks} /> : null}
+              {listing.proNotes ? (
+                <Fact label="PRO" value={listing.proNotes} />
+              ) : null}
+              <Fact label="Stamps" value={listing.stamps} mono />
+              <Fact label="Serial" value={listing.serial} mono />
+              <Fact label="Path" value={pathLabel(listing.route)} />
+              <Fact label="Discipline" value={listing.discipline} />
+            </dl>
           </details>
-        )}
 
-        <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
-          {FULFILLMENT_LINE}
-        </p>
+          {wear ? (
+            <section className="space-y-2">
+              <h2 className="text-sm text-sbs-text">Wear</h2>
+              <p className="text-sm leading-relaxed text-sbs-ink">{wear}</p>
+            </section>
+          ) : null}
 
-        <Link
-          href="/collection"
-          className="inline-block text-sm text-sbs-ink underline-offset-4 hover:underline"
-        >
-          Back to Collection
-        </Link>
+          {(listing.verified || listing.southBaySelect) && (
+            <details>
+              <summary className="cursor-pointer text-[var(--sbs-text-meta)] text-sbs-muted">
+                About Verified
+              </summary>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-sbs-ink">
+                Verified saddles are founder-reviewed and ship through escrow.
+                South Bay Select is founder-chosen stock. Shipping only — no
+                walk-ins.
+              </p>
+            </details>
+          )}
 
-        {related.length > 0 ? (
-          <section className="space-y-4">
-            <h2 className="text-sm text-sbs-text">Also in the Collection</h2>
-            <div className="sbs-collection-grid">
-              {related.map((item) => (
-                <SaddleCard key={item.id} listing={item} />
-              ))}
-            </div>
-          </section>
-        ) : null}
+          <Link
+            href="/collection"
+            className="inline-block text-sm text-sbs-ink underline-offset-4 hover:underline"
+          >
+            Back to Collection
+          </Link>
+        </div>
       </div>
+
+      {related.length > 0 ? (
+        <section className="sbs-page-wide space-y-4">
+          <h2 className="text-sm text-sbs-text">Also in the Collection</h2>
+          <div className="sbs-collection-grid">
+            {related.map((item) => (
+              <SaddleCard key={item.id} listing={item} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </article>
   );
 }

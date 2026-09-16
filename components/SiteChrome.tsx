@@ -9,7 +9,7 @@ const nav = [
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-sbs-border bg-sbs-white/95 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-[var(--sbs-max)] items-center justify-between px-[var(--sbs-page-pad-x)] py-3 md:px-[var(--sbs-page-pad-x-md)]">
+      <div className="mx-auto flex w-full max-w-[var(--sbs-max)] items-center justify-between px-[var(--sbs-page-pad-x)] py-2.5 md:px-[var(--sbs-page-pad-x-md)]">
         <Link href="/" className="block leading-none">
           <BrandMark />
         </Link>
