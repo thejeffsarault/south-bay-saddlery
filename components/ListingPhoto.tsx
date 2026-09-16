@@ -35,6 +35,7 @@ export function ListingPhoto({
       <img
         src={src}
         alt={alt}
+        draggable={false}
         className={`h-full w-full ${contain ? "object-contain" : "object-cover"} object-center`}
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : "auto"}

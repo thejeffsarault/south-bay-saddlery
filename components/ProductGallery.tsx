@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { shotLabel } from "@/lib/catalog";
 import { ListingPhoto } from "./ListingPhoto";
 
@@ -12,7 +12,7 @@ function Chevron({ dir }: { dir: "prev" | "next" }) {
       className="h-5 w-5"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.6"
+      strokeWidth="1.8"
     >
       {dir === "prev" ? (
         <path d="M15 5 L8 12 L15 19" />
@@ -23,6 +23,14 @@ function Chevron({ dir }: { dir: "prev" | "next" }) {
   );
 }
 
+type DragSession = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  dragging: boolean;
+  axis: "h" | "v" | null;
+};
+
 export function ProductGallery({
   labels,
   photoSrcs,
@@ -32,59 +40,62 @@ export function ProductGallery({
   photoSrcs?: Record<string, string>;
   videoSrc?: string;
 }) {
-  const scroller = useRef<HTMLDivElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
   const thumbs = useRef<HTMLDivElement>(null);
+  const drag = useRef<DragSession | null>(null);
   const indexRef = useRef(0);
   const [index, setIndex] = useState(0);
+  const [width, setWidth] = useState(0);
+  const [offsetX, setOffsetX] = useState(0);
 
-  const media: Array<{
-    key: string;
-    type: "image" | "video";
-    src?: string;
-    alt: string;
-  }> = labels.map((label) => ({
-    key: label,
-    type: "image",
-    src: photoSrcs?.[label],
-    alt: shotLabel(label),
-  }));
+  const media = useMemo(() => {
+    const items: Array<{
+      key: string;
+      type: "image" | "video";
+      src?: string;
+      alt: string;
+    }> = labels.map((label) => ({
+      key: label,
+      type: "image",
+      src: photoSrcs?.[label],
+      alt: shotLabel(label),
+    }));
 
-  if (videoSrc) {
-    media.splice(1, 0, {
-      key: "promo",
-      type: "video",
-      src: videoSrc,
-      alt: "Showroom",
-    });
-  }
+    if (videoSrc) {
+      items.splice(1, 0, {
+        key: "promo",
+        type: "video",
+        src: videoSrc,
+        alt: "Showroom",
+      });
+    }
+
+    return items;
+  }, [labels, photoSrcs, videoSrc]);
 
   const mediaCount = media.length;
   indexRef.current = index;
 
   const goTo = useCallback(
     (next: number) => {
-      const el = scroller.current;
-      if (!el || mediaCount === 0) return;
+      if (mediaCount === 0) return;
       const clamped = ((next % mediaCount) + mediaCount) % mediaCount;
-      el.scrollTo({
-        left: clamped * el.clientWidth,
-        behavior: "smooth",
-      });
       indexRef.current = clamped;
+      setOffsetX(0);
       setIndex(clamped);
     },
     [mediaCount],
   );
 
-  function onScroll() {
-    const el = scroller.current;
-    if (!el || el.clientWidth === 0) return;
-    const next = Math.round(el.scrollLeft / el.clientWidth);
-    if (next !== indexRef.current) {
-      indexRef.current = next;
-      setIndex(next);
-    }
-  }
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    const sync = () => setWidth(el.clientWidth);
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -109,36 +120,90 @@ export function ProductGallery({
   }, [goTo]);
 
   useEffect(() => {
-    const el = scroller.current;
-    if (!el) return;
-    const keepPinned = () => {
-      el.scrollLeft = indexRef.current * el.clientWidth;
-    };
-    const observer = new ResizeObserver(keepPinned);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
     const active = thumbs.current?.querySelector<HTMLElement>(
       `[data-gallery-thumb="${index}"]`,
     );
     active?.scrollIntoView({ inline: "nearest", block: "nearest" });
   }, [index]);
 
+  function endPointer(clientX: number) {
+    const session = drag.current;
+    if (!session) return;
+    const dx = clientX - session.startX;
+    const axis = session.axis;
+    const dragged = session.dragging;
+    drag.current = null;
+    setOffsetX(0);
+    if (axis === "v") return;
+    if (dragged) {
+      const stageWidth = stage.current?.clientWidth ?? width || 320;
+      const threshold = Math.max(36, stageWidth * 0.12);
+      if (dx <= -threshold) goTo(indexRef.current + 1);
+      else if (dx >= threshold) goTo(indexRef.current - 1);
+      return;
+    }
+    goTo(indexRef.current + 1);
+  }
+
+  function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    drag.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      dragging: false,
+      axis: null,
+    };
+  }
+
+  function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const session = drag.current;
+    if (!session || session.pointerId !== event.pointerId) return;
+    const dx = event.clientX - session.startX;
+    const dy = event.clientY - session.startY;
+    if (!session.axis && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      session.axis = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+      if (session.axis === "h") {
+        session.dragging = true;
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+    }
+    if (session.axis === "h") {
+      setOffsetX(dx);
+    }
+  }
+
+  function onPointerUp(event: React.PointerEvent<HTMLDivElement>) {
+    if (!drag.current || drag.current.pointerId !== event.pointerId) return;
+    endPointer(event.clientX);
+  }
+
+  function onPointerCancel(event: React.PointerEvent<HTMLDivElement>) {
+    if (!drag.current || drag.current.pointerId !== event.pointerId) return;
+    drag.current = null;
+    setOffsetX(0);
+  }
+
   if (media.length === 0) {
     return <ListingPhoto alt="Showroom" className="aspect-[4/5] w-full" />;
   }
 
   const canNav = media.length > 1;
+  const slideWidth = width || 1;
+  const trackX = -index * slideWidth + offsetX;
+  const dragging = offsetX !== 0;
 
   return (
     <div className="sbs-gallery-root min-w-0 w-full">
-      <div className="relative min-w-0">
+      <div className="sbs-gallery-stage" ref={stage}>
         <div
-          ref={scroller}
-          onScroll={onScroll}
-          className="sbs-gallery bg-sbs-white"
+          className={`sbs-gallery-track${dragging ? " is-dragging" : ""}`}
+          style={{ transform: `translate3d(${trackX}px, 0, 0)` }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
+          onDragStart={(event) => event.preventDefault()}
           aria-roledescription="carousel"
           aria-label="Showroom photos"
         >
@@ -151,6 +216,7 @@ export function ProductGallery({
                   autoPlay
                   playsInline
                   loop
+                  draggable={false}
                   className="aspect-[4/5] w-full bg-sbs-white object-contain"
                 />
               ) : (
@@ -171,7 +237,11 @@ export function ProductGallery({
               type="button"
               className="sbs-gallery-arrow sbs-gallery-arrow-prev"
               aria-label="Previous photo"
-              onClick={() => goTo(index - 1)}
+              onClick={(event) => {
+                event.stopPropagation();
+                goTo(index - 1);
+              }}
+              onPointerDown={(event) => event.stopPropagation()}
             >
               <Chevron dir="prev" />
             </button>
@@ -179,7 +249,11 @@ export function ProductGallery({
               type="button"
               className="sbs-gallery-arrow sbs-gallery-arrow-next"
               aria-label="Next photo"
-              onClick={() => goTo(index + 1)}
+              onClick={(event) => {
+                event.stopPropagation();
+                goTo(index + 1);
+              }}
+              onPointerDown={(event) => event.stopPropagation()}
             >
               <Chevron dir="next" />
             </button>
