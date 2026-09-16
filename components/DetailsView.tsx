@@ -41,10 +41,12 @@ export function DetailsView({ id }: { id: string }) {
   return (
     <article>
       <div className="lg:mx-auto lg:grid lg:max-w-[var(--sbs-max)] lg:grid-cols-2 lg:items-start lg:gap-12 lg:px-[var(--sbs-page-pad-x-md)] lg:pt-8">
-        <ProductGallery
-          labels={listing.photoLabels}
-          photoSrcs={listing.photoSrcs}
-        />
+        <div className="min-w-0">
+          <ProductGallery
+            labels={listing.photoLabels}
+            photoSrcs={listing.photoSrcs}
+          />
+        </div>
 
         <div className="sbs-page space-y-5 !pt-5 lg:sticky lg:top-20 lg:max-w-none lg:px-0 lg:py-0">
           <header className="space-y-3">
