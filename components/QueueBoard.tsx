@@ -102,12 +102,26 @@ export function QueueBoard() {
             <dl className="mt-3 grid gap-2 text-sm text-sbs-ink">
               <Fact label="Contact" value={`${item.contactName} · ${item.email} · ${item.phone}`} />
               <Fact label="Location" value={item.location} />
-              <Fact label="Seat / flap / tree" value={`${item.seat} · ${item.flap} · ${item.tree}`} />
+              <Fact
+                label="Seat / flap / panel"
+                value={`${item.seat} · ${item.flap} · ${item.panel || item.tree || "—"}`}
+              />
               <Fact label="Serial" value={item.serial} />
               <Fact label="Stamps" value={item.stamps} />
+              <Fact label="Description" value={item.description || "—"} />
               <Fact label="Condition + wear" value={`${item.condition}. ${item.wear}`} />
               <Fact label="Service" value={item.serviceHistory} />
-              <Fact label="Price expectation" value={item.priceExpectation} />
+              <Fact
+                label="Proposed list"
+                value={
+                  item.needsJeffReview && !item.priceExpectation
+                    ? "Needs founder price"
+                    : item.priceExpectation
+                }
+              />
+              {item.needsJeffReview ? (
+                <Fact label="Review flag" value="needsJeffReview" />
+              ) : null}
               <Fact label="Path" value={item.pathInterest ? pathLabel(item.pathInterest) : "—"} />
               <Fact
                 label="Photos"
@@ -140,6 +154,15 @@ export function QueueBoard() {
                     />
                   );
                 })}
+                {(item.morePhotos ?? []).map((photo, index) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={`more-${photo.name}-${index}`}
+                    src={photo.thumb}
+                    alt=""
+                    className="aspect-square w-full object-cover"
+                  />
+                ))}
               </div>
             ) : (
               <p className="mt-3 text-xs text-sbs-muted">

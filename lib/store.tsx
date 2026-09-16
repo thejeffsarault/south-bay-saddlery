@@ -39,12 +39,18 @@ const emptyDraft = (): IntakeDraft => ({
   tree: "",
   stamps: "",
   serial: "",
+  panel: "",
+  blocks: "",
   condition: "",
   wear: "",
   serviceHistory: "",
   priceExpectation: "",
-  pathInterest: "",
+  description: "",
+  pathInterest: "self-serve",
   photos: {},
+  morePhotos: [],
+  needsJeffReview: false,
+  priceFlags: [],
 });
 
 function readPersisted(): Persisted {
@@ -56,7 +62,10 @@ function readPersisted(): Persisted {
     if (!raw) return { submissions: [], extraListings: [] };
     const parsed = JSON.parse(raw) as Persisted;
     return {
-      submissions: parsed.submissions ?? [],
+      submissions: (parsed.submissions ?? []).map((item) => ({
+        ...item,
+        morePhotos: item.morePhotos ?? [],
+      })),
       extraListings: parsed.extraListings ?? [],
     };
   } catch {
@@ -185,9 +194,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         year: item.year,
         seat: item.seat,
         flap: item.flap,
-        tree: item.tree,
+        tree: item.tree || item.panel,
         serial: item.serial,
         stamps: item.stamps,
+        blocks: item.blocks || undefined,
+        proNotes: item.panel || undefined,
         condition: item.condition || "Good",
         wear: item.wear,
         price,
@@ -201,12 +212,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         platformOwned: false,
         payoutMode: "connect",
         sellerEmail: item.email,
-        summary: `Pre-owned ${listingName(item)}.`,
+        summary: item.description || `Pre-owned ${listingName(item)}.`,
         photoLabels: INTAKE_ANGLES.map((angle) => angle.id).filter(
           (angle) => item.photos[angle],
         ),
         photoSrcs,
-        heroSrc: photoSrcs.front || photoSrcs.panels,
+        heroSrc: photoSrcs.side || photoSrcs.front || photoSrcs.panels,
       };
 
       setExtraListings((current) => [listing, ...current]);

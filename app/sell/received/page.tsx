@@ -14,13 +14,11 @@ export default async function SellReceivedPage({
   const { id, path } = await searchParams;
   return (
     <div className="sbs-page space-y-5">
-      <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
-        Intake
-      </p>
-      <h1 className="font-serif text-4xl text-sbs-text">Received</h1>
-      <p className="text-sbs-ink">
-        Your saddle is pending in the founder approval queue. It is not in the
-        Collection until it is approved and published.
+      <h1 className="font-serif text-3xl font-medium text-sbs-text sm:text-4xl">
+        Received
+      </h1>
+      <p className="text-sm text-sbs-muted">
+        In the founder queue. Not live until approved.
       </p>
       <ReceivedView id={id} path={path} />
       <Link href="/collection" className="inline-block text-sm underline underline-offset-4">

@@ -1,105 +1,357 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  CONDITIONS,
-  BODY_ANGLES,
-  INTAKE_ANGLES,
-  MIN_BODY_PHOTOS,
-  PATH_INTERESTS,
-  bodyPhotoCount,
+  SELL_COPY,
   hasRequiredPhotos,
   type IntakeDraft,
   type PhotoAngleId,
+  type PhotoThumb,
 } from "@/lib/catalog";
-import { SellerTerms } from "@/components/SellerTerms";
+import type { BluebookProposePublic } from "@/lib/bluebook/types";
+import { AngleGuide } from "@/components/AngleGuide";
+import { PhotoActionPair } from "@/components/PhotoSlot";
+import { SELL_GUIDE_LINE, type SellGuideId } from "@/lib/sell-guides";
+import { draftDescription } from "@/lib/draft-copy";
 import { fileToThumb } from "@/lib/photos";
+import {
+  SELL_DEMO_STAMP,
+  demoPlaceholderPhotos,
+} from "@/lib/sell-demo";
+import { parseVoltaireStamp, type StampToken } from "@/lib/serial/voltaire";
 import { emptyDraft, useStore } from "@/lib/store";
 
 const fieldClass =
-  "w-full border border-sbs-border bg-sbs-surface px-3 py-2.5 text-sm text-sbs-text outline-none focus:border-sbs-black";
+  "w-full border-0 border-b border-sbs-border bg-transparent px-0 py-2 text-sm text-sbs-text outline-none focus:border-sbs-black";
 
-function Section({
-  index,
-  title,
-  children,
-}: {
-  index: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="space-y-3">
-      <div>
-        <p className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-sbs-muted">
-          {index}
-        </p>
-        <h2 className="font-serif text-2xl text-sbs-text">{title}</h2>
-      </div>
-      {children}
-    </section>
-  );
+const sellCtaClass =
+  "inline-flex w-full max-w-[220px] items-center justify-center rounded-full bg-sbs-accent px-8 py-4 text-sm font-medium tracking-wide text-sbs-on-accent disabled:opacity-60";
+
+const SINGLE_STEPS = [
+  { id: "photo.side", angle: "side", title: "Side", n: 1 },
+  { id: "photo.other", angle: "other", title: "Other side", n: 2 },
+  { id: "photo.seat", angle: "seat", title: "Seat", n: 3 },
+] as const;
+
+type SingleStepId = (typeof SINGLE_STEPS)[number]["id"];
+type StepId =
+  | "intro"
+  | SingleStepId
+  | "photo.under"
+  | "photo.serial"
+  | "photo.more"
+  | "draft"
+  | "verified"
+  | "done";
+
+const ORDER: StepId[] = [
+  "intro",
+  "photo.side",
+  "photo.other",
+  "photo.seat",
+  "photo.under",
+  "photo.serial",
+  "photo.more",
+  "draft",
+  "verified",
+  "done",
+];
+
+function singleStep(id: StepId) {
+  return SINGLE_STEPS.find((step) => step.id === id);
 }
 
-export function SellForm() {
-  const router = useRouter();
+function progressFor(step: StepId) {
+  if (step === "photo.under") return 4;
+  if (step === "photo.serial") return 5;
+  return singleStep(step)?.n ?? null;
+}
+
+export function SellForm({ demo = false }: { demo?: boolean }) {
   const { submitIntake, notifyJeff } = useStore();
   const [draft, setDraft] = useState<IntakeDraft>(emptyDraft);
+  const [step, setStep] = useState<StepId>("intro");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [copyDirty, setCopyDirty] = useState(false);
+  const [tokens, setTokens] = useState<StampToken[]>([]);
+  const [stampNote, setStampNote] = useState("");
+  const advanceRef = useRef<number | null>(null);
+  const demoSeeded = useRef(false);
 
-  const bodyReady = bodyPhotoCount(draft.photos);
-  const canSubmit = useMemo(() => {
-    return (
-      draft.contactName &&
-      draft.email &&
-      draft.phone &&
-      draft.location &&
-      draft.brand &&
-      draft.model &&
-      draft.year &&
-      draft.seat &&
-      draft.flap &&
-      draft.tree &&
-      draft.stamps &&
-      draft.serial &&
-      draft.condition &&
-      draft.wear &&
-      draft.serviceHistory &&
-      draft.priceExpectation &&
-      draft.pathInterest &&
-      hasRequiredPhotos(draft.photos)
+  const photosReady = hasRequiredPhotos(draft.photos);
+  const currentSingle = singleStep(step);
+  const progress = progressFor(step);
+  const proposedCopy = useMemo(
+    () =>
+      draftDescription({
+        brand: draft.brand,
+        model: draft.model,
+        year: draft.year,
+        seat: draft.seat,
+        flap: draft.flap,
+        panel: draft.panel,
+        serial: draft.serial,
+        condition: draft.condition,
+      }),
+    [
+      draft.brand,
+      draft.model,
+      draft.year,
+      draft.seat,
+      draft.flap,
+      draft.panel,
+      draft.serial,
+      draft.condition,
+    ],
+  );
+
+  useEffect(() => {
+    if (copyDirty) return;
+    setDraft((current) =>
+      current.description === proposedCopy
+        ? current
+        : { ...current, description: proposedCopy },
     );
-  }, [draft]);
+  }, [copyDirty, proposedCopy]);
+
+  useEffect(() => {
+    if (step !== "draft") return;
+    const brand = draft.brand.trim();
+    const year = draft.year.trim();
+    if (!brand || !year) {
+      setDraft((current) =>
+        current.needsJeffReview || current.priceExpectation
+          ? { ...current, needsJeffReview: !current.priceExpectation }
+          : current,
+      );
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch("/api/pricing/bluebook-propose", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            brand: draft.brand,
+            model: draft.model,
+            year: draft.year,
+            conditionTier: draft.condition,
+            serial: draft.serial,
+            path: draft.pathInterest || "self-serve",
+          }),
+          signal: controller.signal,
+        });
+        const data = (await res.json()) as BluebookProposePublic;
+        if (controller.signal.aborted) return;
+        if (data.ok) {
+          setDraft((current) => ({
+            ...current,
+            priceExpectation: String(data.proposedList),
+            needsJeffReview: false,
+            priceFlags: data.flags,
+          }));
+        } else {
+          setDraft((current) => ({
+            ...current,
+            priceExpectation: "",
+            needsJeffReview: true,
+            priceFlags: data.flags ?? [data.reason],
+          }));
+        }
+      } catch {
+        if (controller.signal.aborted) return;
+        setDraft((current) => ({
+          ...current,
+          priceExpectation: "",
+          needsJeffReview: true,
+          priceFlags: ["price_lookup_failed"],
+        }));
+      }
+    }, 280);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [
+    step,
+    draft.brand,
+    draft.model,
+    draft.year,
+    draft.condition,
+    draft.serial,
+    draft.pathInterest,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      if (advanceRef.current) window.clearTimeout(advanceRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!demo) {
+      if (demoSeeded.current) {
+        demoSeeded.current = false;
+        setDraft(emptyDraft());
+        setTokens([]);
+        setStampNote("");
+        setCopyDirty(false);
+        setStep("intro");
+      }
+      return;
+    }
+    if (demoSeeded.current) return;
+    demoSeeded.current = true;
+    const parsed = parseVoltaireStamp(SELL_DEMO_STAMP);
+    setTokens(parsed.tokens);
+    setStampNote(parsed.confident ? "Stamp read." : "");
+    setDraft((current) => ({
+      ...current,
+      stamps: SELL_DEMO_STAMP,
+      brand: parsed.brand || current.brand,
+      model: parsed.model || current.model,
+      year: parsed.year || current.year,
+      seat: parsed.seat || current.seat,
+      flap: parsed.flap || current.flap,
+      panel: parsed.panel || current.panel,
+      blocks: parsed.blocks || current.blocks,
+      tree: parsed.tree || current.tree,
+      serial: parsed.serial || current.serial,
+      condition: current.condition || "Excellent",
+      photos: { ...demoPlaceholderPhotos(), ...current.photos },
+    }));
+  }, [demo]);
 
   function update<K extends keyof IntakeDraft>(key: K, value: IntakeDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
-  async function onPhoto(angleId: PhotoAngleId, file?: File) {
+  function go(next: StepId) {
+    setError("");
+    if (advanceRef.current) {
+      window.clearTimeout(advanceRef.current);
+      advanceRef.current = null;
+    }
+    setStep(next);
+  }
+
+  function goNext() {
+    const index = ORDER.indexOf(step);
+    if (index >= 0 && index < ORDER.length - 1) go(ORDER[index + 1]);
+  }
+
+  function goBack() {
+    const index = ORDER.indexOf(step);
+    if (index > 0) go(ORDER[index - 1]);
+  }
+
+  function scheduleAdvance(from: StepId) {
+    if (advanceRef.current) window.clearTimeout(advanceRef.current);
+    advanceRef.current = window.setTimeout(() => {
+      const index = ORDER.indexOf(from);
+      if (index >= 0 && index < ORDER.length - 1) setStep(ORDER[index + 1]);
+    }, 400);
+  }
+
+  async function attachPhoto(angle: PhotoAngleId, files: FileList | File[] | null) {
+    const file = files?.[0];
     if (!file) return;
     const thumb = await fileToThumb(file);
+    const nextPhotos = { ...draft.photos, [angle]: thumb };
     setDraft((current) => ({
       ...current,
-      photos: { ...current.photos, [angleId]: thumb },
+      photos: { ...current.photos, [angle]: thumb },
+    }));
+    if (angle === "panels" || angle === "billets") {
+      if (nextPhotos.panels?.thumb && nextPhotos.billets?.thumb) {
+        scheduleAdvance("photo.under");
+      }
+    } else if (angle === "serial") {
+      scheduleAdvance("photo.serial");
+    } else {
+      const match = SINGLE_STEPS.find((item) => item.angle === angle);
+      if (match) scheduleAdvance(match.id);
+    }
+  }
+
+  async function attachMore(files: FileList | File[] | null) {
+    if (!files?.length) return;
+    const extras: PhotoThumb[] = [];
+    for (const file of Array.from(files)) {
+      extras.push(await fileToThumb(file));
+    }
+    setDraft((current) => ({
+      ...current,
+      morePhotos: [...current.morePhotos, ...extras],
     }));
   }
 
-  async function onSubmit(event: React.FormEvent) {
-    event.preventDefault();
+  function applyStamp(value: string) {
+    const parsed = parseVoltaireStamp(value);
+    setTokens(parsed.tokens);
+    setDraft((current) => {
+      const next = { ...current, stamps: value };
+      if (!parsed.confident) {
+        setStampNote("");
+        return next;
+      }
+      setStampNote("");
+      return {
+        ...next,
+        brand: parsed.brand,
+        model: parsed.model,
+        year: parsed.year || current.year,
+        seat: parsed.seat,
+        flap: parsed.flap,
+        panel: parsed.panel,
+        blocks: parsed.blocks,
+        tree: parsed.tree,
+        serial: parsed.serial,
+      };
+    });
+  }
+
+  function goVerified() {
     setError("");
-    if (!canSubmit) {
-      setError(
-        `Complete contact, saddle facts, at least ${MIN_BODY_PHOTOS} of panels / flaps / underflaps / billets / front / back, and a mandatory serial/stamp photo.`,
-      );
+    if (!demo && !photosReady) {
+      setError("Side, other side, seat, under, and serial are required.");
+      go("photo.side");
+      return;
+    }
+    if (!demo && (!draft.contactName.trim() || !draft.email.trim())) {
+      setError("Name and email are needed so we can reach you.");
+      return;
+    }
+    go("verified");
+  }
+
+  async function submitPath(path: "verified" | "self-serve") {
+    setError("");
+    update("pathInterest", path);
+    if (demo) {
+      go("done");
+      return;
+    }
+    if (!photosReady) {
+      setError("Side, other side, seat, under, and serial are required.");
+      go("photo.side");
+      return;
+    }
+    if (!draft.contactName.trim() || !draft.email.trim()) {
+      setError("Name and email are needed so we can reach you.");
+      go("draft");
       return;
     }
     setBusy(true);
-    const submission = submitIntake(draft);
+    const submission = submitIntake({ ...draft, pathInterest: path });
     try {
       await notifyJeff(submission.id);
-      if (draft.pathInterest === "verified") {
+      if (path === "verified") {
         await fetch("/api/labels/fedex", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -112,309 +364,528 @@ export function SellForm() {
     } catch {
       // Queue still holds the pending listing if notify/label stubs fail.
     }
-    router.push(
-      `/sell/received?id=${encodeURIComponent(submission.id)}&path=${encodeURIComponent(
-        draft.pathInterest || "self-serve",
-      )}`,
-    );
+    setBusy(false);
+    go("done");
   }
 
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (step === "draft") goVerified();
+  }
+
+  const underReady = Boolean(
+    draft.photos.panels?.thumb && draft.photos.billets?.thumb,
+  );
+
   return (
-    <form onSubmit={onSubmit} className="space-y-10">
-      <Section index="01" title="Contact">
-        <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-            Name
-          </span>
-          <input
-            className={fieldClass}
-            value={draft.contactName}
-            onChange={(e) => update("contactName", e.target.value)}
-            autoComplete="name"
-            required
-          />
-        </label>
-        <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-            Email
-          </span>
-          <input
-            type="email"
-            className={fieldClass}
-            value={draft.email}
-            onChange={(e) => update("email", e.target.value)}
-            autoComplete="email"
-            required
-          />
-        </label>
-        <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-            Phone
-          </span>
-          <input
-            type="tel"
-            className={fieldClass}
-            value={draft.phone}
-            onChange={(e) => update("phone", e.target.value)}
-            autoComplete="tel"
-            required
-          />
-        </label>
-      </Section>
-
-      <Section index="02" title="Location">
-        <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-            City, state
-          </span>
-          <input
-            className={fieldClass}
-            value={draft.location}
-            onChange={(e) => update("location", e.target.value)}
-            placeholder="Palos Verdes, CA"
-            required
-          />
-        </label>
-      </Section>
-
-      <Section index="03" title="Brand / model / year">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="block space-y-1">
-            <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-              Brand
-            </span>
-            <input
-              className={fieldClass}
-              value={draft.brand}
-              onChange={(e) => update("brand", e.target.value)}
-              required
-            />
-          </label>
-          <label className="block space-y-1">
-            <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-              Model
-            </span>
-            <input
-              className={fieldClass}
-              value={draft.model}
-              onChange={(e) => update("model", e.target.value)}
-              required
-            />
-          </label>
-          <label className="block space-y-1">
-            <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-              Year
-            </span>
-            <input
-              className={fieldClass}
-              value={draft.year}
-              onChange={(e) => update("year", e.target.value)}
-              required
-            />
-          </label>
-        </div>
-      </Section>
-
-      <Section index="04" title="Seat / flap / tree">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="block space-y-1">
-            <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-              Seat
-            </span>
-            <input
-              className={fieldClass}
-              value={draft.seat}
-              onChange={(e) => update("seat", e.target.value)}
-              placeholder='17.5"'
-              required
-            />
-          </label>
-          <label className="block space-y-1">
-            <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-              Flap
-            </span>
-            <input
-              className={fieldClass}
-              value={draft.flap}
-              onChange={(e) => update("flap", e.target.value)}
-              required
-            />
-          </label>
-          <label className="block space-y-1">
-            <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-              Tree
-            </span>
-            <input
-              className={fieldClass}
-              value={draft.tree}
-              onChange={(e) => update("tree", e.target.value)}
-              required
-            />
-          </label>
-        </div>
-      </Section>
-
-      <Section index="05" title="Stamps / serial">
-        <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-            Serial
-          </span>
-          <input
-            className={fieldClass}
-            value={draft.serial}
-            onChange={(e) => update("serial", e.target.value)}
-            required
-          />
-        </label>
-        <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-            Stamps
-          </span>
-          <textarea
-            className={`${fieldClass} min-h-24`}
-            value={draft.stamps}
-            onChange={(e) => update("stamps", e.target.value)}
-            required
-          />
-        </label>
-        <p className="text-sm text-sbs-ink">
-          A serial photo is required in the photo set below.
+    <form
+      onSubmit={onSubmit}
+      className="flex min-h-[calc(100dvh-7rem)] flex-col"
+    >
+      {demo ? (
+        <p role="status" className="text-[var(--sbs-text-meta)] text-sbs-muted">
+          {SELL_COPY.demoBanner}
         </p>
-      </Section>
+      ) : null}
 
-      <Section index="06" title="Condition + wear">
-        <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-            Condition
-          </span>
-          <select
-            className={fieldClass}
-            value={draft.condition}
-            onChange={(e) =>
-              update("condition", e.target.value as IntakeDraft["condition"])
-            }
-            required
+      <div className="relative flex min-h-8 items-center">
+        {step !== "intro" && step !== "done" ? (
+          <button
+            type="button"
+            onClick={goBack}
+            className="text-[var(--sbs-text-meta)] text-sbs-muted"
           >
-            <option value="">Select</option>
-            {CONDITIONS.map((condition) => (
-              <option key={condition} value={condition}>
-                {condition}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block space-y-1">
-          <span className="text-xs uppercase tracking-[0.14em] text-sbs-muted">
-            Wear notes
-          </span>
-          <textarea
-            className={`${fieldClass} min-h-24`}
-            value={draft.wear}
-            onChange={(e) => update("wear", e.target.value)}
-            required
+            {SELL_COPY.back}
+          </button>
+        ) : null}
+        {progress ? (
+          <p className="pointer-events-none absolute inset-x-0 text-center font-mono text-[var(--sbs-text-meta)] text-sbs-muted opacity-40">
+            {progress} / 5
+          </p>
+        ) : null}
+      </div>
+
+      <div key={step} className="sbs-step flex flex-1 flex-col justify-center py-16">
+        {step === "intro" ? <IntroStep onStart={goNext} /> : null}
+
+        {currentSingle ? (
+          <PhotoAsk
+            title={currentSingle.title}
+            angle={currentSingle.angle}
+            thumb={draft.photos[currentSingle.angle]?.thumb}
+            onFiles={(files) => void attachPhoto(currentSingle.angle, files)}
+            onContinue={goNext}
+            allowContinue={demo || Boolean(draft.photos[currentSingle.angle]?.thumb)}
           />
+        ) : null}
+
+        {step === "photo.under" ? (
+          <UnderStep
+            panels={draft.photos.panels?.thumb}
+            billets={draft.photos.billets?.thumb}
+            onPanels={(files) => void attachPhoto("panels", files)}
+            onBillets={(files) => void attachPhoto("billets", files)}
+            onContinue={goNext}
+            allowContinue={demo || underReady}
+          />
+        ) : null}
+
+        {step === "photo.serial" ? (
+          <PhotoAsk
+            title="Serial"
+            angle="serial"
+            thumb={draft.photos.serial?.thumb}
+            onFiles={(files) => void attachPhoto("serial", files)}
+            onContinue={goNext}
+            allowContinue={demo || Boolean(draft.photos.serial?.thumb)}
+            stamp={demo ? draft.stamps : undefined}
+            tokens={demo ? tokens : undefined}
+            stampNote={demo ? stampNote : undefined}
+            onStamp={demo ? applyStamp : undefined}
+          />
+        ) : null}
+
+        {step === "photo.more" ? (
+          <MoreStep
+            extras={draft.morePhotos}
+            onFiles={(files) => void attachMore(files)}
+            onSkip={goNext}
+          />
+        ) : null}
+
+        {step === "draft" ? (
+          <DraftStep
+            draft={draft}
+            error={error}
+            onUpdate={update}
+            onCopyDirty={() => setCopyDirty(true)}
+            onContinue={goVerified}
+          />
+        ) : null}
+
+        {step === "verified" ? (
+          <VerifiedStep
+            busy={busy}
+            onVerified={() => void submitPath("verified")}
+            onSelfServe={() => void submitPath("self-serve")}
+          />
+        ) : null}
+
+        {step === "done" ? <DoneStep /> : null}
+      </div>
+    </form>
+  );
+}
+
+function IntroStep({ onStart }: { onStart: () => void }) {
+  return (
+    <div className="flex flex-col items-center px-2 py-6 text-center">
+      <p
+        aria-hidden
+        className="font-mono text-[var(--sbs-text-meta)] tracking-[0.36em] text-sbs-muted"
+      >
+        1 · 2 · 3
+      </p>
+      <h1
+        className="mt-10 font-serif font-medium leading-[1.12] tracking-[0.02em] text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        {SELL_COPY.headline}
+      </h1>
+      <div className="mt-8 space-y-2 text-lg leading-8 text-sbs-text">
+        <p>{SELL_COPY.beat1}</p>
+        <p>{SELL_COPY.beat2}</p>
+        <p>{SELL_COPY.beat3}</p>
+      </div>
+      <p className="mt-6 text-[var(--sbs-text-meta)] text-sbs-muted">
+        {SELL_COPY.time}
+      </p>
+      <button type="button" onClick={onStart} className={`${sellCtaClass} mt-14`}>
+        {SELL_COPY.begin}
+      </button>
+    </div>
+  );
+}
+
+function PhotoAsk({
+  title,
+  angle,
+  thumb,
+  onFiles,
+  onContinue,
+  allowContinue,
+  stamp,
+  tokens,
+  stampNote,
+  onStamp,
+}: {
+  title: string;
+  angle: PhotoAngleId;
+  thumb?: string;
+  onFiles: (files: FileList | null) => void;
+  onContinue: () => void;
+  allowContinue?: boolean;
+  stamp?: string;
+  tokens?: StampToken[];
+  stampNote?: string;
+  onStamp?: (value: string) => void;
+}) {
+  const guideId = angle as SellGuideId;
+  const line = SELL_GUIDE_LINE[guideId];
+
+  return (
+    <div className="space-y-10">
+      <div className="space-y-5">
+        <AngleGuide id={guideId} />
+        <h2
+          className="font-serif font-medium text-sbs-text"
+          style={{ fontSize: "var(--sbs-text-hero)" }}
+        >
+          {title}
+        </h2>
+        {line ? <p className="text-base leading-7 text-sbs-text">{line}</p> : null}
+      </div>
+
+      {thumb ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={thumb} alt="" className="max-h-56 w-full object-contain" />
+      ) : null}
+
+      <PhotoActionPair
+        id={`step-${angle}`}
+        variant="hero"
+        onCamera={onFiles}
+        onLibrary={onFiles}
+      />
+
+      {onStamp ? (
+        <label className="block space-y-1">
+          <textarea
+            className={`${fieldClass} min-h-16 text-sbs-muted`}
+            value={stamp ?? ""}
+            onChange={(e) => onStamp(e.target.value)}
+            aria-label="Stamp"
+          />
+          {tokens?.length ? (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {tokens.map((token, index) => (
+                <span
+                  key={`${token.raw}-${index}`}
+                  className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-sbs-muted"
+                >
+                  {token.kind} {token.raw}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {stampNote ? (
+            <p className="text-[var(--sbs-text-meta)] text-sbs-muted">{stampNote}</p>
+          ) : null}
         </label>
-      </Section>
+      ) : null}
 
-      <Section index="07" title="Service">
-        <textarea
-          className={`${fieldClass} min-h-24`}
-          value={draft.serviceHistory}
-          onChange={(e) => update("serviceHistory", e.target.value)}
-          required
+      {allowContinue ? (
+        <button
+          type="button"
+          onClick={onContinue}
+          className="text-sm text-sbs-text"
+        >
+          {SELL_COPY.continue}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function UnderStep({
+  panels,
+  billets,
+  onPanels,
+  onBillets,
+  onContinue,
+  allowContinue,
+}: {
+  panels?: string;
+  billets?: string;
+  onPanels: (files: FileList | null) => void;
+  onBillets: (files: FileList | null) => void;
+  onContinue: () => void;
+  allowContinue?: boolean;
+}) {
+  return (
+    <div className="space-y-12">
+      <div className="space-y-5">
+        <AngleGuide id="panels" />
+        <h2
+          className="font-serif font-medium text-sbs-text"
+          style={{ fontSize: "var(--sbs-text-hero)" }}
+        >
+          Under
+        </h2>
+      </div>
+      <div className="space-y-10">
+        <UnderSlot
+          id="panels"
+          label="Panels"
+          line={SELL_GUIDE_LINE.panels}
+          thumb={panels}
+          onFiles={onPanels}
         />
-      </Section>
-
-      <Section index="08" title="Price expectation">
-        <input
-          className={fieldClass}
-          inputMode="decimal"
-          value={draft.priceExpectation}
-          onChange={(e) => update("priceExpectation", e.target.value)}
-          placeholder="4200"
-          required
+        <UnderSlot
+          id="billets"
+          label="Billets"
+          line={SELL_GUIDE_LINE.billets}
+          thumb={billets}
+          onFiles={onBillets}
+          showGuide
         />
-      </Section>
+      </div>
+      {allowContinue ? (
+        <button
+          type="button"
+          onClick={onContinue}
+          className="text-sm text-sbs-text"
+        >
+          {SELL_COPY.continue}
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
-      <Section index="09" title="Path">
-        <div className="grid gap-2">
-          {PATH_INTERESTS.map((path) => (
-            <label
-              key={path.id}
-              className={`border px-3 py-3 text-sm ${
-                draft.pathInterest === path.id
-                  ? "border-sbs-black bg-sbs-surface"
-                  : "border-sbs-border"
-              }`}
-            >
-              <input
-                type="radio"
-                className="sr-only"
-                name="path"
-                value={path.id}
-                checked={draft.pathInterest === path.id}
-                onChange={() => update("pathInterest", path.id)}
-                required
-              />
-              <span className="block font-medium">{path.label}</span>
-              <span className="mt-1 block text-sbs-ink">{path.hint}</span>
-            </label>
+function UnderSlot({
+  id,
+  label,
+  line,
+  thumb,
+  onFiles,
+  showGuide,
+}: {
+  id: SellGuideId;
+  label: string;
+  line: string;
+  thumb?: string;
+  onFiles: (files: FileList | null) => void;
+  showGuide?: boolean;
+}) {
+  return (
+    <div className="space-y-4 border-b border-sbs-border pb-8 last:border-b-0 last:pb-0">
+      <div className="space-y-5">
+        {showGuide ? <AngleGuide id={id} /> : null}
+        <p className="text-sm text-sbs-text">{label}</p>
+        <p className="text-base leading-7 text-sbs-text">{line}</p>
+      </div>
+      {thumb ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={thumb} alt="" className="max-h-40 w-full object-contain" />
+      ) : null}
+      <PhotoActionPair
+        id={`step-${id}`}
+        variant="plain"
+        onCamera={onFiles}
+        onLibrary={onFiles}
+      />
+    </div>
+  );
+}
+
+function MoreStep({
+  extras,
+  onFiles,
+  onSkip,
+}: {
+  extras: PhotoThumb[];
+  onFiles: (files: FileList | null) => void;
+  onSkip: () => void;
+}) {
+  return (
+    <div className="space-y-14">
+      <h2
+        className="font-serif font-medium text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        More
+      </h2>
+      {extras.length ? (
+        <div className="flex flex-wrap gap-3">
+          {extras.map((photo, index) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={`${photo.name}-${index}`}
+              src={photo.thumb}
+              alt=""
+              className="h-20 w-20 object-cover"
+            />
           ))}
         </div>
-        <SellerTerms compact />
-      </Section>
+      ) : null}
+      <PhotoActionPair
+        id="step-more"
+        variant="hero"
+        libraryMultiple
+        onCamera={onFiles}
+        onLibrary={onFiles}
+      />
+      <button type="button" onClick={onSkip} className="text-sm text-sbs-muted">
+        {SELL_COPY.skip}
+      </button>
+    </div>
+  );
+}
 
-      <Section index="10" title="Photos">
-        <p className="text-sm text-sbs-ink">
-          At least {MIN_BODY_PHOTOS} of {BODY_ANGLES.map((a) => a.label.toLowerCase()).join(", ")}.
-          Serial / stamp photo is mandatory. Damage if any.
-        </p>
-        <p className="font-mono text-xs text-sbs-muted">
-          {bodyReady} / {BODY_ANGLES.length} body
-          {draft.photos.serial?.thumb ? " · serial/stamp on file" : " · serial/stamp needed"}
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          {INTAKE_ANGLES.map((angle) => {
-            const current = draft.photos[angle.id];
-            return (
-              <label
-                key={angle.id}
-                className="relative block aspect-[4/5] overflow-hidden border border-sbs-border bg-sbs-surface"
-              >
-                {current?.thumb ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={current.thumb}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="absolute inset-0 flex items-end p-2 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
-                    {angle.label}
-                    {angle.required ? " · required" : ""}
-                  </span>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="absolute inset-0 cursor-pointer opacity-0"
-                  onChange={(e) => onPhoto(angle.id, e.target.files?.[0])}
-                />
-              </label>
-            );
-          })}
-        </div>
-      </Section>
+function DraftStep({
+  draft,
+  error,
+  onUpdate,
+  onCopyDirty,
+  onContinue,
+}: {
+  draft: IntakeDraft;
+  error: string;
+  onUpdate: <K extends keyof IntakeDraft>(key: K, value: IntakeDraft[K]) => void;
+  onCopyDirty: () => void;
+  onContinue: () => void;
+}) {
+  return (
+    <div className="space-y-12">
+      <h2
+        className="font-serif font-medium text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        Draft
+      </h2>
+
+      <p className="text-sm text-sbs-text">{SELL_COPY.feeLine}</p>
+
+      <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
+        {SELL_COPY.policy}
+      </p>
+
+      <textarea
+        className={`${fieldClass} min-h-24`}
+        value={draft.description}
+        onChange={(e) => {
+          onCopyDirty();
+          onUpdate("description", e.target.value);
+        }}
+        aria-label="Description"
+      />
+
+      <div className="space-y-8">
+        <Field
+          label="Name"
+          value={draft.contactName}
+          onChange={(v) => onUpdate("contactName", v)}
+          autoComplete="name"
+        />
+        <Field
+          label="Email"
+          value={draft.email}
+          onChange={(v) => onUpdate("email", v)}
+          type="email"
+          autoComplete="email"
+        />
+      </div>
 
       {error ? <p className="text-sm text-sbs-text">{error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={busy}
-        className="w-full bg-sbs-accent px-5 py-3.5 text-sm tracking-wide text-sbs-on-accent disabled:opacity-60"
-      >
-        {busy ? "Sending…" : "Submit for review"}
+      <button type="button" onClick={onContinue} className={sellCtaClass}>
+        {SELL_COPY.continue}
       </button>
-    </form>
+    </div>
+  );
+}
+
+function VerifiedStep({
+  busy,
+  onVerified,
+  onSelfServe,
+}: {
+  busy: boolean;
+  onVerified: () => void;
+  onSelfServe: () => void;
+}) {
+  return (
+    <div className="space-y-10">
+      <h2
+        className="font-serif font-medium text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        {SELL_COPY.verifiedTitle}
+      </h2>
+      <div className="space-y-2 text-lg leading-8 text-sbs-text">
+        <p>{SELL_COPY.verifiedBeat1}</p>
+        <p>{SELL_COPY.verifiedBeat2}</p>
+        <p>{SELL_COPY.verifiedBeat3}</p>
+      </div>
+      <div className="space-y-4 text-sm leading-7 text-sbs-text">
+        <p>{SELL_COPY.verifiedBody1}</p>
+        <p>{SELL_COPY.verifiedBody2}</p>
+      </div>
+      <div className="space-y-4">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onVerified}
+          className="inline-flex max-w-[280px] items-center justify-center rounded-full bg-sbs-accent px-8 py-4 text-sm font-medium tracking-wide text-sbs-on-accent disabled:opacity-60"
+        >
+          {busy ? "Sending…" : SELL_COPY.verifiedCta}
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onSelfServe}
+          className="block text-sm text-sbs-muted"
+        >
+          {SELL_COPY.verifiedSkip}
+        </button>
+        <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
+          {SELL_COPY.verifiedMicro}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function DoneStep() {
+  return (
+    <div className="space-y-16">
+      <h2
+        className="font-serif font-medium text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        {SELL_COPY.done}
+      </h2>
+      <Link href="/collection" className={sellCtaClass}>
+        {SELL_COPY.collection}
+      </Link>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  type = "text",
+  autoComplete,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  autoComplete?: string;
+}) {
+  return (
+    <label className="block space-y-1">
+      <span className="text-[var(--sbs-text-meta)] text-sbs-muted">{label}</span>
+      <input
+        type={type}
+        className={fieldClass}
+        value={value}
+        autoComplete={autoComplete}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </label>
   );
 }

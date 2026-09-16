@@ -17,7 +17,7 @@ export function SaddleCard({
         <ListingPhoto
           src={listing.heroSrc}
           alt={cardTitle(listing)}
-          className="sbs-card-frame"
+          className="sbs-card-frame w-full shrink-0"
           contain
           priority={priority}
         />

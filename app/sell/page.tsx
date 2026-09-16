@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
 import { SellForm } from "@/components/SellForm";
+import { SELL_COPY } from "@/lib/catalog";
+import { isSellDemo } from "@/lib/sell-demo";
 
 export const metadata: Metadata = {
-  title: "Sell Your Saddle",
+  title: SELL_COPY.headline,
 };
 
-export default function SellPage() {
+export default async function SellPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ demo?: string }>;
+}) {
+  const { demo } = await searchParams;
   return (
-    <div className="sbs-page space-y-6">
-      <h1 className="font-serif text-3xl font-medium text-sbs-text sm:text-4xl">
-        Sell Your Saddle
-      </h1>
-      <p className="text-sm text-sbs-muted">
-        List in minutes · founder review before live
-      </p>
-      <SellForm />
+    <div className="sbs-page sbs-sell !py-8">
+      <SellForm demo={isSellDemo(demo)} />
     </div>
   );
 }
