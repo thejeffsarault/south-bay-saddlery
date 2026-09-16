@@ -60,6 +60,9 @@ export const SELL_COPY = {
   secondary: "Founder reviews before live",
   cta: "Submit for review",
   continue: "Upload & continue",
+  takePhoto: "Take photo",
+  fromLibrary: "Choose from library",
+  fromFiles: "Choose from files",
 } as const;
 
 export type Condition = (typeof CONDITIONS)[number];

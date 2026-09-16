@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   BODY_ANGLES,
@@ -16,6 +16,7 @@ import {
 } from "@/lib/catalog";
 import { DRAFT_CONDITIONS } from "@/lib/bluebook/types";
 import type { BluebookProposePublic } from "@/lib/bluebook/types";
+import { PhotoActionPair, PhotoSlot } from "@/components/PhotoSlot";
 import { draftDescription } from "@/lib/draft-copy";
 import { fileToThumb } from "@/lib/photos";
 import { parseVoltaireStamp, type StampToken } from "@/lib/serial/voltaire";
@@ -42,7 +43,6 @@ export function SellForm() {
   const [copyDirty, setCopyDirty] = useState(false);
   const [tokens, setTokens] = useState<StampToken[]>([]);
   const [stampNote, setStampNote] = useState("");
-  const dropRef = useRef<HTMLInputElement>(null);
 
   const bodyReady = bodyPhotoCount(draft.photos);
   const photosReady = hasRequiredPhotos(draft.photos);
@@ -263,28 +263,27 @@ export function SellForm() {
     <form onSubmit={onSubmit} className="space-y-8">
       {step === "photos" ? (
         <section className="space-y-5">
-          <button
-            type="button"
-            onClick={() => dropRef.current?.click()}
+          <div
             className="flex min-h-[16rem] w-full flex-col items-center justify-center border border-sbs-border bg-sbs-white px-6 py-10 text-center"
-          >
-            <span className="font-serif text-2xl text-sbs-text">Add photos</span>
-            <span className="mt-2 text-sm text-sbs-muted">
-              Camera or files. {MIN_BODY_PHOTOS} angles + serial.
-            </span>
-          </button>
-          <input
-            ref={dropRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            multiple
-            className="sr-only"
-            onChange={(e) => {
-              void assignFiles(e.target.files);
-              e.target.value = "";
+            onDragOver={(e) => {
+              e.preventDefault();
             }}
-          />
+            onDrop={(e) => {
+              e.preventDefault();
+              void assignFiles(e.dataTransfer.files);
+            }}
+          >
+            <PhotoActionPair
+              id="bulk"
+              align="center"
+              libraryMultiple
+              onCamera={(files) => void assignFiles(files)}
+              onLibrary={(files) => void assignFiles(files)}
+            />
+            <p className="mt-4 text-sm text-sbs-muted">
+              {MIN_BODY_PHOTOS} angles + serial
+            </p>
+          </div>
 
           <div className="flex items-end justify-between gap-3">
             <p className="font-mono text-[var(--sbs-text-meta)] text-sbs-muted">
@@ -300,53 +299,18 @@ export function SellForm() {
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {INTAKE_ANGLES.map((angle) => {
-              const current = draft.photos[angle.id];
-              return (
-                <div
-                  key={angle.id}
-                  className={`relative aspect-[4/5] overflow-hidden border bg-sbs-white ${
-                    angle.id === "serial" && !current?.thumb
-                      ? "border-sbs-black"
-                      : "border-sbs-border"
-                  }`}
-                >
-                  <label className="absolute inset-0 block cursor-pointer">
-                    {current?.thumb ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={current.thumb}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="absolute inset-0 flex items-end p-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-sbs-muted">
-                        {angle.label}
-                      </span>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="sr-only"
-                      onChange={(e) => {
-                        void assignFiles(e.target.files, angle.id);
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
-                  {current?.thumb ? (
-                    <button
-                      type="button"
-                      onClick={() => clearPhoto(angle.id)}
-                      className="absolute right-1 top-1 bg-sbs-white px-1.5 py-0.5 text-[0.62rem] text-sbs-muted"
-                    >
-                      Clear
-                    </button>
-                  ) : null}
-                </div>
-              );
-            })}
+            {INTAKE_ANGLES.map((angle) => (
+              <PhotoSlot
+                key={angle.id}
+                id={angle.id}
+                label={angle.label}
+                emphasized={angle.id === "serial"}
+                thumb={draft.photos[angle.id]?.thumb}
+                onCamera={(files) => void assignFiles(files, angle.id)}
+                onLibrary={(files) => void assignFiles(files, angle.id)}
+                onClear={() => clearPhoto(angle.id)}
+              />
+            ))}
           </div>
 
           {error ? <p className="text-sm text-sbs-text">{error}</p> : null}
