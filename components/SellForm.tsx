@@ -637,7 +637,7 @@ function UnderStep({
           line={SELL_GUIDE_LINE.billets}
           thumb={billets}
           onFiles={onBillets}
-          companion
+          showGuide
         />
       </div>
       {allowContinue ? (
@@ -659,23 +659,21 @@ function UnderSlot({
   line,
   thumb,
   onFiles,
-  companion,
+  showGuide,
 }: {
   id: SellGuideId;
   label: string;
   line: string;
   thumb?: string;
   onFiles: (files: FileList | null) => void;
-  companion?: boolean;
+  showGuide?: boolean;
 }) {
   return (
     <div className="space-y-4 border-b border-sbs-border pb-8 last:border-b-0 last:pb-0">
-      <div className="flex items-start gap-3">
-        {companion ? <AngleGuide id={id} size="slot" /> : null}
-        <div className="space-y-2">
-          <p className="text-sm text-sbs-text">{label}</p>
-          <p className="text-base leading-7 text-sbs-text">{line}</p>
-        </div>
+      <div className="space-y-5">
+        {showGuide ? <AngleGuide id={id} /> : null}
+        <p className="text-sm text-sbs-text">{label}</p>
+        <p className="text-base leading-7 text-sbs-text">{line}</p>
       </div>
       {thumb ? (
         // eslint-disable-next-line @next/next/no-img-element
