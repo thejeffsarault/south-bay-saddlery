@@ -78,9 +78,19 @@ export const SELL_COPY = {
   done: "Sent",
   collection: "Collection",
   feeLine: "12% on sale · you keep ~88%",
-  verifiedLabel: "Verified · $150",
   policy: "Payout 7–10 days · 3-day return · $100 restock",
   demoBanner: "Demo — not submitted to approval queue",
+  verifiedTitle: "Make it Verified",
+  verifiedBeat1: "We inspect it in person.",
+  verifiedBeat2: "We warehouse it at South Bay Stables.",
+  verifiedBeat3: "We film a short promo for the listing.",
+  verifiedBody1:
+    "For $150 (non-refundable), ship your saddle to us. Jeff checks tree, leather, billets, and wear. If it passes, we store it, finish the listing, and shoot a promo video for the site and social.",
+  verifiedBody2:
+    "If it doesn’t pass, you keep the photos of what we found — the $150 stays applied, and we pay to ship the saddle back to you.",
+  verifiedCta: "Continue with Verified · $150",
+  verifiedSkip: "List without Verified",
+  verifiedMicro: "Includes FedEx label to South Bay Stables.",
 } as const;
 
 export type Condition = (typeof CONDITIONS)[number];

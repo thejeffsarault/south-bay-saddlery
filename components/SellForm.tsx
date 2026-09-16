@@ -42,6 +42,7 @@ type StepId =
   | "photo.serial"
   | "photo.more"
   | "draft"
+  | "verified"
   | "done";
 
 const ORDER: StepId[] = [
@@ -53,6 +54,7 @@ const ORDER: StepId[] = [
   "photo.serial",
   "photo.more",
   "draft",
+  "verified",
   "done",
 ];
 
@@ -314,9 +316,23 @@ export function SellForm({ demo = false }: { demo?: boolean }) {
     });
   }
 
-  async function onSubmit(event: React.FormEvent) {
-    event.preventDefault();
+  function goVerified() {
     setError("");
+    if (!demo && !photosReady) {
+      setError("Side, other side, seat, under, and serial are required.");
+      go("photo.side");
+      return;
+    }
+    if (!demo && (!draft.contactName.trim() || !draft.email.trim())) {
+      setError("Name and email are needed so we can reach you.");
+      return;
+    }
+    go("verified");
+  }
+
+  async function submitPath(path: "verified" | "self-serve") {
+    setError("");
+    update("pathInterest", path);
     if (demo) {
       go("done");
       return;
@@ -328,13 +344,14 @@ export function SellForm({ demo = false }: { demo?: boolean }) {
     }
     if (!draft.contactName.trim() || !draft.email.trim()) {
       setError("Name and email are needed so we can reach you.");
+      go("draft");
       return;
     }
     setBusy(true);
-    const submission = submitIntake(draft);
+    const submission = submitIntake({ ...draft, pathInterest: path });
     try {
       await notifyJeff(submission.id);
-      if (draft.pathInterest === "verified") {
+      if (path === "verified") {
         await fetch("/api/labels/fedex", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -349,6 +366,11 @@ export function SellForm({ demo = false }: { demo?: boolean }) {
     }
     setBusy(false);
     go("done");
+  }
+
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    if (step === "draft") goVerified();
   }
 
   const underReady = Boolean(
@@ -435,9 +457,17 @@ export function SellForm({ demo = false }: { demo?: boolean }) {
           <DraftStep
             draft={draft}
             error={error}
-            busy={busy}
             onUpdate={update}
             onCopyDirty={() => setCopyDirty(true)}
+            onContinue={goVerified}
+          />
+        ) : null}
+
+        {step === "verified" ? (
+          <VerifiedStep
+            busy={busy}
+            onVerified={() => void submitPath("verified")}
+            onSelfServe={() => void submitPath("self-serve")}
           />
         ) : null}
 
@@ -708,15 +738,15 @@ function MoreStep({
 function DraftStep({
   draft,
   error,
-  busy,
   onUpdate,
   onCopyDirty,
+  onContinue,
 }: {
   draft: IntakeDraft;
   error: string;
-  busy: boolean;
   onUpdate: <K extends keyof IntakeDraft>(key: K, value: IntakeDraft[K]) => void;
   onCopyDirty: () => void;
+  onContinue: () => void;
 }) {
   return (
     <div className="space-y-12">
@@ -728,22 +758,6 @@ function DraftStep({
       </h2>
 
       <p className="text-sm text-sbs-text">{SELL_COPY.feeLine}</p>
-
-      <button
-        type="button"
-        aria-pressed={draft.pathInterest === "verified"}
-        onClick={() =>
-          onUpdate(
-            "pathInterest",
-            draft.pathInterest === "verified" ? "self-serve" : "verified",
-          )
-        }
-        className={`text-left text-sm ${
-          draft.pathInterest === "verified" ? "text-sbs-text" : "text-sbs-muted"
-        }`}
-      >
-        {SELL_COPY.verifiedLabel}
-      </button>
 
       <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
         {SELL_COPY.policy}
@@ -777,9 +791,60 @@ function DraftStep({
 
       {error ? <p className="text-sm text-sbs-text">{error}</p> : null}
 
-      <button type="submit" disabled={busy} className={sellCtaClass}>
-        {busy ? "Sending…" : SELL_COPY.cta}
+      <button type="button" onClick={onContinue} className={sellCtaClass}>
+        {SELL_COPY.continue}
       </button>
+    </div>
+  );
+}
+
+function VerifiedStep({
+  busy,
+  onVerified,
+  onSelfServe,
+}: {
+  busy: boolean;
+  onVerified: () => void;
+  onSelfServe: () => void;
+}) {
+  return (
+    <div className="space-y-10">
+      <h2
+        className="font-serif font-medium text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        {SELL_COPY.verifiedTitle}
+      </h2>
+      <div className="space-y-2 text-lg leading-8 text-sbs-text">
+        <p>{SELL_COPY.verifiedBeat1}</p>
+        <p>{SELL_COPY.verifiedBeat2}</p>
+        <p>{SELL_COPY.verifiedBeat3}</p>
+      </div>
+      <div className="space-y-4 text-sm leading-7 text-sbs-text">
+        <p>{SELL_COPY.verifiedBody1}</p>
+        <p>{SELL_COPY.verifiedBody2}</p>
+      </div>
+      <div className="space-y-4">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onVerified}
+          className="inline-flex max-w-[280px] items-center justify-center rounded-full bg-sbs-accent px-8 py-4 text-sm font-medium tracking-wide text-sbs-on-accent disabled:opacity-60"
+        >
+          {busy ? "Sending…" : SELL_COPY.verifiedCta}
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onSelfServe}
+          className="block text-sm text-sbs-muted"
+        >
+          {SELL_COPY.verifiedSkip}
+        </button>
+        <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
+          {SELL_COPY.verifiedMicro}
+        </p>
+      </div>
     </div>
   );
 }
