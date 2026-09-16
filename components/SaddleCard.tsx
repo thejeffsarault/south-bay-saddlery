@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cardTitle, formatUsd, type PublicListing } from "@/lib/catalog";
 import { ListingBadges } from "./Badges";
 import { ListingPhoto } from "./ListingPhoto";
+import { VerifiedMarkOverlay } from "./VerifiedMark";
 
 export function SaddleCard({
   listing,
@@ -12,13 +13,16 @@ export function SaddleCard({
 }) {
   return (
     <Link href={`/collection/${listing.id}`} className="group block">
-      <ListingPhoto
-        src={listing.heroSrc}
-        alt={cardTitle(listing)}
-        className="mb-3 aspect-[4/5] bg-sbs-white"
-        contain
-        priority={priority}
-      />
+      <div className="relative">
+        <ListingPhoto
+          src={listing.heroSrc}
+          alt={cardTitle(listing)}
+          className="sbs-card-frame"
+          contain
+          priority={priority}
+        />
+        {listing.verified ? <VerifiedMarkOverlay /> : null}
+      </div>
       <h2 className="truncate text-[var(--sbs-text-title)] leading-snug text-sbs-text">
         {cardTitle(listing)}
       </h2>
@@ -28,7 +32,6 @@ export function SaddleCard({
       <div className="mt-2">
         <ListingBadges
           verified={listing.verified}
-          southBaySelect={listing.southBaySelect}
           selfServe={listing.route === "self-serve"}
         />
       </div>

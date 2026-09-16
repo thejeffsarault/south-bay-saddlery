@@ -4,13 +4,13 @@ Mobile-first Next.js app for pre-owned English saddles.
 
 - **Sell Your Saddle** — `/sell` (`/present` redirects here)
 - **Collection** — `/collection`
-- **Details** — `/collection/[id]` with Verified + South Bay Select badges and Stripe buy
+- **Details** — `/collection/[id]` with Verified mark and Stripe buy
 - **Founder queue** — `/queue` listings + **Finance** tab. Alias: `/admin/approvals`
 - **Verification** — `/verify` ($150 PaymentIntent + inbound FedEx seller → warehouse)
 
 English only. No Congress mode. Jeff does not see support, photo, or shipping work — labels and checkout are automated or stubbed behind env.
 
-Seed inventory (both published, Verified + South Bay Select, **platform-owned** — no Connect):
+Seed inventory (both published, Verified, **platform-owned** — no Connect):
 
 - **JI-001** CWD SE01 17.5" 2024 · serial 114716 · $4690 · photos at `/listings/ji-001/`
 - **JI-002** Voltaire Design Stuttgart 18.5" 2019 · serial 1386 · flap 3AAAR · $3850 · photos at `/listings/ji-002/`

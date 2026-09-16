@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { shotLabel } from "@/lib/catalog";
 import { ListingPhoto } from "./ListingPhoto";
+import { VerifiedMarkOverlay } from "./VerifiedMark";
 
 function Chevron({ dir }: { dir: "prev" | "next" }) {
   return (
@@ -37,10 +38,12 @@ export function ProductGallery({
   labels,
   photoSrcs,
   videoSrc,
+  verified = false,
 }: {
   labels: string[];
   photoSrcs?: Record<string, string>;
   videoSrc?: string;
+  verified?: boolean;
 }) {
   const stage = useRef<HTMLDivElement>(null);
   const thumbs = useRef<HTMLDivElement>(null);
@@ -298,6 +301,7 @@ export function ProductGallery({
             </button>
           </>
         ) : null}
+        {verified ? <VerifiedMarkOverlay /> : null}
       </div>
       {canNav ? (
         <div

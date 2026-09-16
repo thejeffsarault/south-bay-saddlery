@@ -75,7 +75,7 @@ type StoreValue = {
     patch?: Partial<
       Pick<
         QueueSubmission,
-        "founderPrice" | "southBaySelect" | "rejectedReason"
+        "founderPrice" | "rejectedReason"
       >
     >,
   ) => void;
@@ -120,7 +120,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       submittedAt: new Date().toISOString(),
       status: "pending",
       founderPrice: draft.priceExpectation,
-      southBaySelect: false,
       publishedListingId: null,
       notifiedAt: null,
       notifyChannel: null,
@@ -137,7 +136,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       id: string,
       status: QueueStatus,
       patch?: Partial<
-        Pick<QueueSubmission, "founderPrice" | "southBaySelect" | "rejectedReason">
+        Pick<QueueSubmission, "founderPrice" | "rejectedReason">
       >,
     ) => {
       setSubmissions((current) =>
@@ -193,8 +192,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         wear: item.wear,
         price,
         verified: item.pathInterest === "verified",
-        southBaySelect:
-          item.pathInterest === "verified" ? item.southBaySelect : false,
         includesCover: false,
         published: true,
         discipline: "English",

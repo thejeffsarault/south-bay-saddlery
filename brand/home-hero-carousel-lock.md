@@ -12,7 +12,7 @@ Home hero = **carousel of top Verified in-stock saddles** (showroom photography)
 - Headline/CTAs stay sparse over or below (existing luxury Home)
 
 ## Behavior
-- Order: Verified (+ Select preferred) · newest or curated top N (3–6)
+- Order: Verified in-stock · newest or curated top N (3–6)
 - Tap/click slide → Details for that listing
 - If <2 Verified: single still (current JI-001 behavior)
 

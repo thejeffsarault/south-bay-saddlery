@@ -45,6 +45,7 @@ export function DetailsView({ id }: { id: string }) {
           <ProductGallery
             labels={listing.photoLabels}
             photoSrcs={listing.photoSrcs}
+            verified={listing.verified}
           />
         </div>
 
@@ -58,7 +59,6 @@ export function DetailsView({ id }: { id: string }) {
             </p>
             <ListingBadges
               verified={listing.verified}
-              southBaySelect={listing.southBaySelect}
               selfServe={listing.route === "self-serve"}
             />
             <p className="text-[var(--sbs-text-meta)] text-sbs-muted">

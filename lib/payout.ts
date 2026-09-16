@@ -105,5 +105,5 @@ export const BUYER_CHECKOUT_COPY = [
 export const SELLER_PAYOUT_COPY = [
   "South Bay Saddlery keeps 12% of the item list price (not shipping or tax).",
   "Card processing is calculated on the full Stripe charge and deducted from your payout — you eat the Stripe fee.",
-  "Payout is 7–10 business days after close, by Transfer to your Connect Express account. Founder Select inventory (JI-001, JI-002) stays on the platform — no Connect transfer. A return skips 12% and skips Transfer; restock is a separate $100 buyer charge.",
+  "Payout is 7–10 business days after close, by Transfer to your Connect Express account. Platform-owned inventory (JI-001, JI-002) stays on the platform — no Connect transfer. A return skips 12% and skips Transfer; restock is a separate $100 buyer charge.",
 ] as const;

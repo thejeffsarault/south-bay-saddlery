@@ -20,7 +20,6 @@ export const PUBLISHED_LISTINGS: PublicListing[] = [
     wear: "Even, light wear consistent with careful schooling. Billets and panels present cleanly.",
     price: 4690,
     verified: true,
-    southBaySelect: true,
     includesCover: true,
     published: true,
     discipline: "English",
@@ -30,7 +29,7 @@ export const PUBLISHED_LISTINGS: PublicListing[] = [
     platformOwned: true,
     payoutMode: "platform",
     summary:
-      "Pre-owned CWD SE01 in Excellent condition. Verified, South Bay Select, offered with cover. Ships through escrow — not a showroom.",
+      "Pre-owned CWD SE01 in Excellent condition. Verified, offered with cover. Ships through escrow — not a showroom.",
     ...ji001Photos,
     // Cantle nameplate is founder-private. Never render MARISSA LEDFORD.
   },
@@ -52,7 +51,6 @@ export const PUBLISHED_LISTINGS: PublicListing[] = [
     wear: "Clean flaps and panels; cover included. Founder-reviewed before publish.",
     price: 3850,
     verified: true,
-    southBaySelect: true,
     includesCover: true,
     published: true,
     discipline: "English",
@@ -62,7 +60,7 @@ export const PUBLISHED_LISTINGS: PublicListing[] = [
     platformOwned: true,
     payoutMode: "platform",
     summary:
-      "Pre-owned Voltaire Design Stuttgart in Excellent condition. Verified, South Bay Select, offered with cover. Ships through escrow — not a showroom.",
+      "Pre-owned Voltaire Design Stuttgart in Excellent condition. Verified, offered with cover. Ships through escrow — not a showroom.",
     ...ji002Photos,
   },
 ];

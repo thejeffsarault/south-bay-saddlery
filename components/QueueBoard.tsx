@@ -147,7 +147,7 @@ export function QueueBoard() {
               </p>
             )}
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="mt-5">
               <label className="block space-y-1">
                 <span className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
                   Founder price
@@ -161,16 +161,6 @@ export function QueueBoard() {
                   }
                   placeholder="4690"
                 />
-              </label>
-              <label className="flex items-end gap-2 pb-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={item.southBaySelect}
-                  onChange={(e) =>
-                    updateSubmission(item.id, { southBaySelect: e.target.checked })
-                  }
-                />
-                South Bay Select
               </label>
             </div>
 

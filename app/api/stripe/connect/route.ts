@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       type: "connect.onboard_stub",
       orderId: undefined,
       listingId: body.listingId,
-      detail: `Connect Express stub for ${email}. Add Stripe keys to create a live Express account. Select inventory skips Connect.`,
+      detail: `Connect Express stub for ${email}. Add Stripe keys to create a live Express account. Platform-owned inventory skips Connect.`,
       stub: true,
     });
     return NextResponse.json({
