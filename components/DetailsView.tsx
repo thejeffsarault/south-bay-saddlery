@@ -102,19 +102,6 @@ export function DetailsView({ id }: { id: string }) {
             </section>
           ) : null}
 
-          {(listing.verified || listing.southBaySelect) && (
-            <details>
-              <summary className="cursor-pointer text-[var(--sbs-text-meta)] text-sbs-muted">
-                About Verified
-              </summary>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-sbs-ink">
-                Verified saddles are founder-reviewed and ship through escrow.
-                South Bay Select is founder-chosen stock. Shipping only — no
-                walk-ins.
-              </p>
-            </details>
-          )}
-
           <Link
             href="/collection"
             className="inline-block text-sm text-sbs-ink underline-offset-4 hover:underline"
@@ -127,7 +114,7 @@ export function DetailsView({ id }: { id: string }) {
       {related.length > 0 ? (
         <section className="sbs-page-wide space-y-4">
           <h2 className="text-sm text-sbs-text">Also in the Collection</h2>
-          <div className="sbs-collection-grid">
+          <div className="sbs-collection-grid grid w-full grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {related.map((item) => (
               <SaddleCard key={item.id} listing={item} />
             ))}

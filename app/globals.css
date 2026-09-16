@@ -144,9 +144,11 @@ textarea {
   padding: var(--sbs-space-6) var(--sbs-page-pad-x);
 }
 
+/* Emily lock: 2-up from 0px, 4-up from 1024. Never default to 1-col. */
 .sbs-collection-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: var(--sbs-space-3);
 }
 
@@ -181,6 +183,6 @@ textarea {
 
 @media (min-width: 1024px) {
   .sbs-collection-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
 }

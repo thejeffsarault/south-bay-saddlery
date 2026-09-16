@@ -17,7 +17,7 @@ export function CollectionGrid({
   }
 
   return (
-    <div className="sbs-collection-grid">
+    <div className="sbs-collection-grid grid w-full grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       {listings.map((listing, index) => (
         <SaddleCard
           key={listing.id}
