@@ -13,7 +13,7 @@ export function SaddleCard({
 }) {
   return (
     <Link href={`/collection/${listing.id}`} className="group block">
-      <div className="relative">
+      <div className="relative mb-3">
         <ListingPhoto
           src={listing.heroSrc}
           alt={cardTitle(listing)}

@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { selectHeroListings, type PublicListing } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { ListingPhoto } from "./ListingPhoto";
-import { VerifiedMarkOverlay } from "./VerifiedMark";
 
 function Chevron({ dir }: { dir: "prev" | "next" }) {
   return (
@@ -38,22 +37,19 @@ type DragSession = {
 
 function HeroStill({ listing, priority }: { listing: PublicListing; priority?: boolean }) {
   return (
-    <div className="relative h-full w-full">
-      <Link
-        href={`/collection/${listing.id}`}
-        className="block h-full w-full"
-        aria-label={`${listing.name} details`}
-      >
-        <ListingPhoto
-          src={listing.heroSrc}
-          alt={listing.name}
-          className="h-full w-full"
-          contain={false}
-          priority={priority}
-        />
-      </Link>
-      {listing.verified ? <VerifiedMarkOverlay /> : null}
-    </div>
+    <Link
+      href={`/collection/${listing.id}`}
+      className="block h-full w-full"
+      aria-label={`${listing.name} details`}
+    >
+      <ListingPhoto
+        src={listing.heroSrc}
+        alt={listing.name}
+        className="h-full w-full"
+        contain={false}
+        priority={priority}
+      />
+    </Link>
   );
 }
 
@@ -271,7 +267,6 @@ export function HeroCarousel({ seed }: { seed: PublicListing[] }) {
             </div>
           ))}
         </div>
-        {slides.some((slide) => slide.verified) ? <VerifiedMarkOverlay /> : null}
         <button
           type="button"
           className="sbs-gallery-arrow sbs-hero-arrow sbs-gallery-arrow-prev"

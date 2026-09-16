@@ -301,7 +301,7 @@ export function ProductGallery({
             </button>
           </>
         ) : null}
-        {verified ? <VerifiedMarkOverlay /> : null}
+        {verified ? <VerifiedMarkOverlay surface="details" /> : null}
       </div>
       {canNav ? (
         <div

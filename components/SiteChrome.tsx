@@ -4,6 +4,7 @@ import { BrandMark } from "@/components/BrandMark";
 const nav = [
   { href: "/collection", label: "Collection" },
   { href: "/sell", label: "Sell Your Saddle" },
+  { href: "/about", label: "About" },
 ];
 
 export function SiteHeader() {
@@ -39,6 +40,9 @@ export function SiteFooter() {
           </Link>
           <Link href="/sell" className="hover:text-sbs-black">
             Sell Your Saddle
+          </Link>
+          <Link href="/about" className="hover:text-sbs-black">
+            About
           </Link>
         </div>
       </div>

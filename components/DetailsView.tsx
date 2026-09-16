@@ -6,6 +6,7 @@ import { ListingBadges } from "@/components/Badges";
 import { BuyCta } from "@/components/BuyCta";
 import { ProductGallery } from "@/components/ProductGallery";
 import { SaddleCard } from "@/components/SaddleCard";
+import { VerifiedMeaning } from "@/components/VerifiedMeaning";
 import {
   FULFILLMENT_LINE,
   WEAR_MAX_CHARS,
@@ -61,6 +62,7 @@ export function DetailsView({ id }: { id: string }) {
               verified={listing.verified}
               selfServe={listing.route === "self-serve"}
             />
+            {listing.verified ? <VerifiedMeaning /> : null}
             <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
               {conditionLine(listing)}
             </p>
