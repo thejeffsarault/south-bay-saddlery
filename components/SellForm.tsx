@@ -413,7 +413,7 @@ export function SellForm() {
         disabled={busy}
         className="w-full bg-sbs-accent px-5 py-3.5 text-sm tracking-wide text-sbs-on-accent disabled:opacity-60"
       >
-        {busy ? "Sending…" : "Sell Your Saddle"}
+        {busy ? "Sending…" : "Submit for review"}
       </button>
     </form>
   );

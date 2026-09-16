@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function QueuePage() {
   return (
-    <div className="space-y-6">
+    <div className="sbs-page-wide space-y-6">
       <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
         Founder
       </p>

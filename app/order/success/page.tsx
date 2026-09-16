@@ -19,7 +19,7 @@ export default async function OrderSuccessPage({
   const restock = kind === "restock" || order?.kind === "restock";
 
   return (
-    <div className="space-y-5">
+    <div className="sbs-page space-y-5">
       <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
         {verification ? "Verification" : restock ? "Restock" : "Escrow"}
       </p>

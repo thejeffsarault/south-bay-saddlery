@@ -1,48 +1,71 @@
 import Link from "next/link";
-import { SaddleCard } from "@/components/SaddleCard";
+import { CollectionGrid } from "@/components/CollectionGrid";
 import { PUBLISHED_LISTINGS } from "@/lib/inventory";
+
+const HERO =
+  PUBLISHED_LISTINGS.find((listing) => listing.id === "ji-001") ??
+  PUBLISHED_LISTINGS[0];
 
 export default function HomePage() {
   return (
-    <div className="space-y-10">
-      <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
-        Pre-owned English
+    <div>
+      <section className="bg-sbs-white">
+        <div className="sbs-hero">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={HERO.heroSrc}
+            alt={HERO.name}
+            className="h-full w-full object-cover object-center"
+            fetchPriority="high"
+          />
+        </div>
+        <div className="sbs-page-wide !pb-0 !pt-5">
+          <h1
+            className="font-serif font-medium leading-[1.1] text-sbs-text"
+            style={{ fontSize: "var(--sbs-text-hero)" }}
+          >
+            Exceptional pre-owned saddles
+          </h1>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              href="/collection"
+              className="bg-sbs-accent px-5 py-3 text-center text-sm tracking-wide text-sbs-on-accent"
+            >
+              Explore the Collection
+            </Link>
+            <Link
+              href="/sell"
+              className="text-center text-sm text-sbs-ink underline-offset-4 hover:underline"
+            >
+              Sell Your Saddle
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="sbs-page-wide space-y-5">
+        <h2 className="font-serif text-2xl font-medium text-sbs-text">
+          The Collection
+        </h2>
+        <CollectionGrid listings={PUBLISHED_LISTINGS} />
+      </section>
+
+      <p className="px-[var(--sbs-page-pad-x)] text-center text-[var(--sbs-text-meta)] text-sbs-muted md:px-[var(--sbs-page-pad-x-md)]">
+        Founder-reviewed · Verified available
       </p>
-      <div className="space-y-4">
-        <h1 className="font-serif text-[2.6rem] leading-[1.05] text-sbs-text sm:text-5xl">
-          Sell your saddle. Browse the Collection.
-        </h1>
-        <p className="max-w-xl text-base leading-relaxed text-sbs-ink">
-          South Bay Saddlery is a mobile-first marketplace for pre-owned
-          English saddles. Photograph the required angles, send the facts, and
-          a founder reviews every listing before it goes live. Shipping and
-          escrow only — the warehouse is ship/receive, not a showroom. No
-          walk-ins or appointments.
-        </p>
-      </div>
-      <div className="brass-rule" />
-      <div className="grid gap-3">
-        <Link
-          href="/sell"
-          className="bg-sbs-accent px-5 py-4 text-center text-sm tracking-wide text-sbs-on-accent"
-        >
-          Sell Your Saddle
-        </Link>
-        <Link
-          href="/collection"
-          className="border border-sbs-border px-5 py-4 text-center text-sm tracking-wide text-sbs-text hover:border-sbs-black"
-        >
-          Explore the Collection
-        </Link>
-      </div>
-      <section className="space-y-4">
-        <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
-          In the Collection
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {PUBLISHED_LISTINGS.map((listing) => (
-            <SaddleCard key={listing.id} listing={listing} />
-          ))}
+
+      <section className="mt-[var(--sbs-space-7)] bg-sbs-black text-sbs-white">
+        <div className="mx-auto max-w-[var(--sbs-max)] px-[var(--sbs-page-pad-x)] py-[var(--sbs-space-7)] text-center md:px-[var(--sbs-page-pad-x-md)]">
+          <h2 className="font-serif text-3xl font-medium">Sell Your Saddle</h2>
+          <p className="mt-2 text-sm text-sbs-white/70">
+            List in minutes · founder review before live
+          </p>
+          <Link
+            href="/sell"
+            className="mt-6 inline-block bg-sbs-white px-5 py-3 text-sm tracking-wide text-sbs-black"
+          >
+            Sell Your Saddle
+          </Link>
         </div>
       </section>
     </div>

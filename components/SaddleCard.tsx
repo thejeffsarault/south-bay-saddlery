@@ -1,45 +1,40 @@
 import Link from "next/link";
-import { formatUsd, type PublicListing } from "@/lib/catalog";
+import { cardTitle, formatUsd, type PublicListing } from "@/lib/catalog";
 import { ListingBadges } from "./Badges";
 import { ListingPhoto } from "./ListingPhoto";
 
-export function SaddleCard({ listing }: { listing: PublicListing }) {
-  const selfServe = listing.route === "self-serve";
+export function SaddleCard({
+  listing,
+  priority = false,
+}: {
+  listing: PublicListing;
+  priority?: boolean;
+}) {
   return (
-    <Link
-      href={`/collection/${listing.id}`}
-      className="block border border-sbs-border bg-sbs-surface p-3 transition-colors hover:border-sbs-black"
-    >
+    <Link href={`/collection/${listing.id}`} className="group block">
       <ListingPhoto
         src={listing.heroSrc}
-        alt={listing.name}
-        caption={listing.sku}
-        className="mb-3 aspect-[5/4]"
+        alt={cardTitle(listing)}
+        className="mb-3 aspect-[4/5] bg-sbs-white"
+        contain={false}
+        priority={priority}
       />
-      <h2 className="font-serif text-[1.45rem] leading-tight text-sbs-text">
-        {listing.name}
+      <h2 className="truncate text-[var(--sbs-text-title)] leading-snug text-sbs-text">
+        {cardTitle(listing)}
       </h2>
-      <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm text-sbs-ink">
-          {listing.condition}
-          {listing.includesCover ? " · with cover" : ""}
-        </p>
-        <p className="font-mono text-sm text-sbs-text">
-          {formatUsd(listing.price)}
-        </p>
-      </div>
+      <p className="mt-0.5 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-sbs-muted">
+        {listing.sku}
+      </p>
+      <p className="mt-1 text-[var(--sbs-text-title)] text-sbs-text">
+        {formatUsd(listing.price)}
+      </p>
       <div className="mt-2">
         <ListingBadges
           verified={listing.verified}
           southBaySelect={listing.southBaySelect}
-          selfServe={selfServe}
+          selfServe={listing.route === "self-serve"}
         />
       </div>
-      {listing.verified || listing.southBaySelect ? (
-        <p className="mt-2 text-xs text-sbs-muted">
-          Shipping / escrow only — no in-person visits
-        </p>
-      ) : null}
     </Link>
   );
 }

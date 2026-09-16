@@ -9,12 +9,16 @@ export function ListingPhoto({
   caption,
   className = "aspect-[4/5]",
   contain = true,
+  priority = false,
+  showCaption = false,
 }: {
   src?: string;
   alt: string;
   caption?: string;
   className?: string;
   contain?: boolean;
+  priority?: boolean;
+  showCaption?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
 
@@ -24,21 +28,20 @@ export function ListingPhoto({
 
   return (
     <figure
-      className={`relative overflow-hidden border border-sbs-border bg-sbs-surface ${className}`}
+      className={`relative overflow-hidden bg-sbs-white ${className}`}
+      style={{ borderRadius: "var(--sbs-radius)" }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={alt}
-        className={`h-full w-full ${contain ? "object-contain" : "object-cover"}`}
+        className={`h-full w-full ${contain ? "object-contain" : "object-cover"} object-center`}
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
         onError={() => setFailed(true)}
       />
-      {caption ? (
-        <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/45 to-transparent px-3 py-2">
-          <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-sbs-white">
-            {caption}
-          </p>
-        </figcaption>
+      {showCaption && caption ? (
+        <figcaption className="sr-only">{caption}</figcaption>
       ) : null}
     </figure>
   );
