@@ -70,6 +70,11 @@ export const SELL_COPY = {
   done: "Submitted",
   doneBody: "Founder will review",
   collection: "Back to Collection",
+  feeLine: "12% success fee on sale.",
+  verifiedLabel: "Verified · $150",
+  verifiedHint: "$150 = inbound label + inspect",
+  certainty:
+    "Payout 7–10 business days after close · 3-day buyer window · $100 restock on return.",
 } as const;
 
 export type Condition = (typeof CONDITIONS)[number];

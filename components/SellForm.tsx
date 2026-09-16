@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  PATH_INTERESTS,
   SELL_COPY,
   hasRequiredPhotos,
   type IntakeDraft,
@@ -606,6 +605,8 @@ function DraftStep({
         <p className="text-sm text-sbs-muted">Blue Book draft price.</p>
       ) : null}
 
+      <p className="text-sm text-sbs-text">{SELL_COPY.feeLine}</p>
+
       <label className="block space-y-1">
         <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
           Description
@@ -636,28 +637,31 @@ function DraftStep({
         />
       </div>
 
-      <div className="grid gap-2">
-        {PATH_INTERESTS.map((path) => (
-          <label
-            key={path.id}
-            className={`border px-3 py-3 text-sm ${
-              draft.pathInterest === path.id
-                ? "border-sbs-black"
-                : "border-sbs-border"
-            }`}
-          >
-            <input
-              type="radio"
-              className="sr-only"
-              name="path"
-              value={path.id}
-              checked={draft.pathInterest === path.id}
-              onChange={() => onUpdate("pathInterest", path.id)}
-            />
-            <span className="block">{path.label}</span>
-          </label>
-        ))}
-      </div>
+      <button
+        type="button"
+        aria-pressed={draft.pathInterest === "verified"}
+        onClick={() =>
+          onUpdate(
+            "pathInterest",
+            draft.pathInterest === "verified" ? "self-serve" : "verified",
+          )
+        }
+        className={`w-full border px-3 py-3 text-left ${
+          draft.pathInterest === "verified"
+            ? "border-sbs-black"
+            : "border-sbs-border"
+        }`}
+      >
+        <span className="block text-sm text-sbs-text">
+          {SELL_COPY.verifiedLabel}
+        </span>
+        <span className="mt-1 block text-[var(--sbs-text-meta)] text-sbs-muted">
+          {SELL_COPY.verifiedHint}
+        </span>
+      </button>
+      <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
+        {SELL_COPY.certainty}
+      </p>
 
       {error ? <p className="text-sm text-sbs-text">{error}</p> : null}
 
