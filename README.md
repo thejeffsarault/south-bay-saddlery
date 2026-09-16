@@ -2,7 +2,7 @@
 
 Mobile-first Next.js app for pre-owned English saddles.
 
-- **Sell Your Saddle** — `/sell` (`/present` redirects here)
+- **Sell Your Saddle** — `/sell` (`/present` redirects here). Photo-first intake; stamp paste drafts details + Blue Book price; founder queue still approves. Photo tips: `/sell/photo-tips`.
 - **Collection** — `/collection`
 - **Details** — `/collection/[id]` with Verified + South Bay Select badges and Stripe buy
 - **Founder queue** — `/queue` listings + **Finance** tab. Alias: `/admin/approvals`
@@ -53,7 +53,7 @@ Development: `npm run dev` (http://localhost:3000).
 
 If Stripe keys are missing, Details still shows a Buy CTA that explains checkout is in test setup. No crash. No fake live money. Finance actions still write the ledger as stubs.
 
-Blue Book wholesale is never shown.
+Blue Book wholesale / trade-in is never shown. `POST /api/pricing/bluebook-propose` loads `data/bluebook-precomputed-2026-06-01.json` (Quinn/Andy lock — not live xlsx). Seller clients receive proposed list + sell band only.
 
 ## Vercel
 

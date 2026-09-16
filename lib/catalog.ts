@@ -46,12 +46,21 @@ export const PATH_INTERESTS = [
 export type PathInterestId = (typeof PATH_INTERESTS)[number]["id"];
 
 export const CONDITIONS = [
+  "Like New",
   "Excellent",
   "Very good",
   "Good",
   "Fair",
   "Needs work",
 ] as const;
+
+export const SELL_COPY = {
+  headline: "Sell Your Saddle",
+  microcopy: "Upload photos — we draft the listing.",
+  secondary: "Founder reviews before live",
+  cta: "Submit for review",
+  continue: "Upload & continue",
+} as const;
 
 export type Condition = (typeof CONDITIONS)[number];
 
@@ -114,12 +123,17 @@ export type IntakeDraft = {
   tree: string;
   stamps: string;
   serial: string;
+  panel: string;
+  blocks: string;
   condition: Condition | "";
   wear: string;
   serviceHistory: string;
   priceExpectation: string;
+  description: string;
   pathInterest: PathInterestId | "";
   photos: Partial<Record<PhotoAngleId, PhotoThumb>>;
+  needsJeffReview: boolean;
+  priceFlags: string[];
 };
 
 export type QueueSubmission = IntakeDraft & {
