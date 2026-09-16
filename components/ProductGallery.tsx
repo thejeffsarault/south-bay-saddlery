@@ -24,11 +24,13 @@ function Chevron({ dir }: { dir: "prev" | "next" }) {
 }
 
 type DragSession = {
-  pointerId: number;
   startX: number;
   startY: number;
+  lastX: number;
   dragging: boolean;
   axis: "h" | "v" | null;
+  finished: boolean;
+  unbind: () => void;
 };
 
 export function ProductGallery({
@@ -126,9 +128,15 @@ export function ProductGallery({
     active?.scrollIntoView({ inline: "nearest", block: "nearest" });
   }, [index]);
 
-  function endPointer(clientX: number) {
+  useEffect(() => {
+    return () => drag.current?.unbind();
+  }, []);
+
+  function finishGesture(clientX: number) {
     const session = drag.current;
-    if (!session) return;
+    if (!session || session.finished) return;
+    session.finished = true;
+    session.unbind();
     const dx = clientX - session.startX;
     const axis = session.axis;
     const dragged = session.dragging;
@@ -137,7 +145,7 @@ export function ProductGallery({
     if (axis === "v") return;
     if (dragged) {
       const stageWidth = stage.current?.clientWidth || width || 320;
-      const threshold = Math.max(36, stageWidth * 0.12);
+      const threshold = Math.max(28, stageWidth * 0.1);
       if (dx <= -threshold) goTo(indexRef.current + 1);
       else if (dx >= threshold) goTo(indexRef.current - 1);
       return;
@@ -145,43 +153,77 @@ export function ProductGallery({
     goTo(indexRef.current + 1);
   }
 
-  function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (event.pointerType === "mouse" && event.button !== 0) return;
+  function startGesture(startX: number, startY: number) {
+    drag.current?.unbind();
+
+    const onMove = (clientX: number, clientY: number) => {
+      const session = drag.current;
+      if (!session || session.finished) return;
+      session.lastX = clientX;
+      const dx = clientX - session.startX;
+      const dy = clientY - session.startY;
+      if (!session.axis && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+        session.axis = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+        session.dragging = session.axis === "h";
+      }
+      if (session.axis === "h") {
+        setOffsetX(dx);
+      }
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      onMove(event.clientX, event.clientY);
+    };
+    const onMouseMove = (event: MouseEvent) => {
+      onMove(event.clientX, event.clientY);
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      if (drag.current?.axis === "h") event.preventDefault();
+      onMove(touch.clientX, touch.clientY);
+    };
+    const onPointerUp = (event: PointerEvent) => finishGesture(event.clientX);
+    const onMouseUp = (event: MouseEvent) => finishGesture(event.clientX);
+    const onTouchEnd = (event: TouchEvent) => {
+      const touch = event.changedTouches[0];
+      finishGesture(touch?.clientX ?? drag.current?.lastX ?? startX);
+    };
+    const onDragEnd = (event: DragEvent) => finishGesture(event.clientX);
+
+    function unbind() {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("dragend", onDragEnd);
+    }
+
     drag.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
+      startX,
+      startY,
+      lastX: startX,
       dragging: false,
       axis: null,
+      finished: false,
+      unbind,
     };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("dragend", onDragEnd);
   }
 
-  function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
-    const session = drag.current;
-    if (!session || session.pointerId !== event.pointerId) return;
-    const dx = event.clientX - session.startX;
-    const dy = event.clientY - session.startY;
-    if (!session.axis && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
-      session.axis = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
-      if (session.axis === "h") {
-        session.dragging = true;
-        event.currentTarget.setPointerCapture(event.pointerId);
-      }
-    }
-    if (session.axis === "h") {
-      setOffsetX(dx);
-    }
-  }
-
-  function onPointerUp(event: React.PointerEvent<HTMLDivElement>) {
-    if (!drag.current || drag.current.pointerId !== event.pointerId) return;
-    endPointer(event.clientX);
-  }
-
-  function onPointerCancel(event: React.PointerEvent<HTMLDivElement>) {
-    if (!drag.current || drag.current.pointerId !== event.pointerId) return;
-    drag.current = null;
-    setOffsetX(0);
+  function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    event.preventDefault();
+    startGesture(event.clientX, event.clientY);
   }
 
   if (media.length === 0) {
@@ -200,9 +242,6 @@ export function ProductGallery({
           className={`sbs-gallery-track${dragging ? " is-dragging" : ""}`}
           style={{ transform: `translate3d(${trackX}px, 0, 0)` }}
           onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerCancel}
           onDragStart={(event) => event.preventDefault()}
           aria-roledescription="carousel"
           aria-label="Showroom photos"
