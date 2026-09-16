@@ -67,6 +67,8 @@ export function HeroCarousel({ seed }: { seed: PublicListing[] }) {
 
   const slideCount = slides.length;
   indexRef.current = index;
+  const pauseHold = useRef(false);
+  const [paused, setPaused] = useState(false);
 
   const goTo = useCallback(
     (next: number) => {
@@ -122,6 +124,20 @@ export function HeroCarousel({ seed }: { seed: PublicListing[] }) {
     return () => drag.current?.unbind();
   }, []);
 
+  useEffect(() => {
+    if (slideCount < 2 || paused) return;
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+    const id = window.setInterval(() => {
+      if (!pauseHold.current) goTo(indexRef.current + 1);
+    }, 7000);
+    return () => window.clearInterval(id);
+  }, [goTo, paused, slideCount]);
+
   function finishGesture(clientX: number) {
     const session = drag.current;
     if (!session || session.finished) return;
@@ -135,6 +151,7 @@ export function HeroCarousel({ seed }: { seed: PublicListing[] }) {
     if (axis === "v") return;
     if (dragged) {
       suppressClick.current = true;
+      setPaused(true);
       const stageWidth = stage.current?.clientWidth || width || 320;
       const threshold = Math.max(28, stageWidth * 0.1);
       if (dx <= -threshold) goTo(indexRef.current + 1);
@@ -145,6 +162,7 @@ export function HeroCarousel({ seed }: { seed: PublicListing[] }) {
   function startGesture(startX: number, startY: number) {
     drag.current?.unbind();
     suppressClick.current = false;
+    pauseHold.current = true;
 
     const onMove = (clientX: number, clientY: number) => {
       const session = drag.current;
@@ -233,7 +251,16 @@ export function HeroCarousel({ seed }: { seed: PublicListing[] }) {
 
   return (
     <div className="sbs-hero">
-      <div className="sbs-gallery-stage sbs-hero-stage" ref={stage}>
+      <div
+        className="sbs-gallery-stage sbs-hero-stage"
+        ref={stage}
+        onPointerEnter={() => {
+          pauseHold.current = true;
+        }}
+        onPointerLeave={() => {
+          pauseHold.current = false;
+        }}
+      >
         <div
           className={`sbs-gallery-track${dragging ? " is-dragging" : ""}`}
           style={{ transform: `translate3d(${trackX}px, 0, 0)` }}
@@ -269,10 +296,11 @@ export function HeroCarousel({ seed }: { seed: PublicListing[] }) {
         </div>
         <button
           type="button"
-          className="sbs-gallery-arrow sbs-hero-arrow sbs-gallery-arrow-prev"
+          className="sbs-hero-edge sbs-hero-edge-prev"
           aria-label="Previous saddle"
           onClick={(event) => {
             event.stopPropagation();
+            setPaused(true);
             goTo(index - 1);
           }}
           onPointerDown={(event) => event.stopPropagation()}
@@ -281,10 +309,11 @@ export function HeroCarousel({ seed }: { seed: PublicListing[] }) {
         </button>
         <button
           type="button"
-          className="sbs-gallery-arrow sbs-hero-arrow sbs-gallery-arrow-next"
+          className="sbs-hero-edge sbs-hero-edge-next"
           aria-label="Next saddle"
           onClick={(event) => {
             event.stopPropagation();
+            setPaused(true);
             goTo(index + 1);
           }}
           onPointerDown={(event) => event.stopPropagation()}

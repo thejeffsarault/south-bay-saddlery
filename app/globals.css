@@ -363,30 +363,50 @@ textarea {
   height: 100%;
 }
 
-.sbs-hero-arrow {
-  border-color: rgba(26, 26, 26, 0.22);
-  background: rgba(255, 255, 255, 0.42);
-  color: rgba(26, 26, 26, 0.62);
-  box-shadow: none;
+.sbs-hero-edge {
+  position: absolute;
+  top: 50%;
+  z-index: 4;
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  transform: translateY(-50%);
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.4);
+  color: rgba(26, 26, 26, 0.42);
+  cursor: pointer;
 }
 
-.sbs-hero-arrow:hover,
-.sbs-hero-arrow:focus-visible {
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--sbs-ink);
+.sbs-hero-edge-prev {
+  left: 0.4rem;
+}
+
+.sbs-hero-edge-next {
+  right: 0.4rem;
+}
+
+.sbs-hero-edge:hover,
+.sbs-hero-edge:focus-visible {
+  background: rgba(255, 255, 255, 0.62);
+  color: rgba(26, 26, 26, 0.7);
+}
+
+.sbs-hero-edge:focus-visible {
+  outline: 1px solid rgba(26, 26, 26, 0.35);
+  outline-offset: 2px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .sbs-hero-arrow {
+  .sbs-hero-edge-prev {
     opacity: 0;
-    transition:
-      opacity 220ms ease,
-      background 220ms ease,
-      color 220ms ease;
+    transition: opacity 220ms ease;
   }
 
-  .sbs-hero-stage:hover .sbs-hero-arrow,
-  .sbs-hero-stage:focus-within .sbs-hero-arrow {
+  .sbs-hero-stage:hover .sbs-hero-edge-prev,
+  .sbs-hero-stage:focus-within .sbs-hero-edge-prev {
     opacity: 1;
   }
 }
