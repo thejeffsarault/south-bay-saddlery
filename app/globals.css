@@ -262,6 +262,56 @@ textarea {
   background: var(--sbs-white);
 }
 
+.sbs-hero > a,
+.sbs-hero > a figure {
+  display: block;
+  height: 100%;
+}
+
+.sbs-hero-stage {
+  height: 100%;
+}
+
+.sbs-hero-slide,
+.sbs-hero-slide a,
+.sbs-hero-slide figure {
+  height: 100%;
+}
+
+.sbs-hero-arrow {
+  border-color: rgba(26, 26, 26, 0.22);
+  background: rgba(255, 255, 255, 0.42);
+  color: rgba(26, 26, 26, 0.62);
+  box-shadow: none;
+}
+
+.sbs-hero-arrow:hover,
+.sbs-hero-arrow:focus-visible {
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--sbs-ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sbs-hero-arrow {
+    opacity: 0;
+    transition:
+      opacity 220ms ease,
+      background 220ms ease,
+      color 220ms ease;
+  }
+
+  .sbs-hero-stage:hover .sbs-hero-arrow,
+  .sbs-hero-stage:focus-within .sbs-hero-arrow {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sbs-hero-stage .sbs-gallery-track {
+    transition: none;
+  }
+}
+
 @media (min-width: 640px) {
   .sbs-page,
   .sbs-page-wide {

@@ -239,3 +239,21 @@ export function listingPhotos(folder: string) {
     heroSrc: photoSrcs["near-side"],
   };
 }
+
+/** Home hero: Verified in-stock only. Select first. Cap 6. Under 2 → single still. */
+export const HERO_CAROUSEL_MAX = 6;
+
+export function selectHeroListings(listings: PublicListing[]): PublicListing[] {
+  const verified = listings.filter(
+    (listing) => listing.published && listing.verified && listing.heroSrc,
+  );
+  const ranked = [...verified].sort((a, b) => {
+    if (a.southBaySelect === b.southBaySelect) return 0;
+    return a.southBaySelect ? -1 : 1;
+  });
+  const top = ranked.slice(0, HERO_CAROUSEL_MAX);
+  if (top.length >= 2) return top;
+  if (top.length === 1) return top;
+  const fallback = listings.find((listing) => listing.published && listing.heroSrc);
+  return fallback ? [fallback] : [];
+}

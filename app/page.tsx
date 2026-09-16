@@ -1,24 +1,13 @@
 import Link from "next/link";
 import { CollectionGrid } from "@/components/CollectionGrid";
+import { HeroCarousel } from "@/components/HeroCarousel";
 import { PUBLISHED_LISTINGS } from "@/lib/inventory";
-
-const HERO =
-  PUBLISHED_LISTINGS.find((listing) => listing.id === "ji-001") ??
-  PUBLISHED_LISTINGS[0];
 
 export default function HomePage() {
   return (
     <div>
       <section className="relative bg-sbs-white">
-        <div className="sbs-hero">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={HERO.heroSrc}
-            alt={HERO.name}
-            className="h-full w-full object-cover object-center"
-            fetchPriority="high"
-          />
-        </div>
+        <HeroCarousel seed={PUBLISHED_LISTINGS} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-sbs-white via-sbs-white/85 to-transparent">
           <div className="sbs-page-wide pointer-events-auto !pb-6 !pt-16">
             <h1
