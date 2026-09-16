@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { selectHeroListings, type PublicListing } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
-import { ListingPhoto } from "./ListingPhoto";
 
 function Chevron({ dir }: { dir: "prev" | "next" }) {
   return (
@@ -35,6 +34,26 @@ type DragSession = {
   unbind: () => void;
 };
 
+function HeroPhoto({
+  listing,
+  priority = false,
+}: {
+  listing: PublicListing;
+  priority?: boolean;
+}) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={listing.heroSrc}
+      alt={listing.name}
+      className="sbs-hero-photo"
+      draggable={false}
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : "auto"}
+    />
+  );
+}
+
 function HeroStill({ listing, priority }: { listing: PublicListing; priority?: boolean }) {
   return (
     <Link
@@ -42,13 +61,7 @@ function HeroStill({ listing, priority }: { listing: PublicListing; priority?: b
       className="block h-full w-full"
       aria-label={`${listing.name} details`}
     >
-      <ListingPhoto
-        src={listing.heroSrc}
-        alt={listing.name}
-        className="h-full w-full"
-        contain={false}
-        priority={priority}
-      />
+      <HeroPhoto listing={listing} priority={priority} />
     </Link>
   );
 }
@@ -283,13 +296,7 @@ export function HeroCarousel({ seed }: { seed: PublicListing[] }) {
                   }
                 }}
               >
-                <ListingPhoto
-                  src={slide.heroSrc}
-                  alt={slide.name}
-                  className="h-full w-full"
-                  contain={false}
-                  priority={slideIndex === 0}
-                />
+                <HeroPhoto listing={slide} priority={slideIndex === 0} />
               </Link>
             </div>
           ))}
