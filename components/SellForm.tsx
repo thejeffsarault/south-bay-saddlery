@@ -13,6 +13,10 @@ import type { BluebookProposePublic } from "@/lib/bluebook/types";
 import { PhotoActionPair } from "@/components/PhotoSlot";
 import { draftDescription } from "@/lib/draft-copy";
 import { fileToThumb } from "@/lib/photos";
+import {
+  SELL_DEMO_STAMP,
+  demoPlaceholderPhotos,
+} from "@/lib/sell-demo";
 import { parseVoltaireStamp, type StampToken } from "@/lib/serial/voltaire";
 import { emptyDraft, useStore } from "@/lib/store";
 
@@ -44,10 +48,11 @@ function photoStep(id: StepId) {
   return PHOTO_STEPS.find((step) => step.id === id);
 }
 
-export function SellForm() {
+export function SellForm({ demo = false }: { demo?: boolean }) {
   const { submitIntake, notifyJeff } = useStore();
   const [draft, setDraft] = useState<IntakeDraft>(emptyDraft);
   const [step, setStep] = useState<StepId>("intro");
+  const demoSeeded = useRef(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [copyDirty, setCopyDirty] = useState(false);
@@ -167,6 +172,46 @@ export function SellForm() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!demo) {
+      if (demoSeeded.current) {
+        demoSeeded.current = false;
+        setDraft(emptyDraft());
+        setTokens([]);
+        setStampNote("");
+        setCopyDirty(false);
+        setStep("intro");
+      }
+      return;
+    }
+    if (demoSeeded.current) return;
+    demoSeeded.current = true;
+    const parsed = parseVoltaireStamp(SELL_DEMO_STAMP);
+    setTokens(parsed.tokens);
+    setStampNote(
+      parsed.flags.includes("yearFromDateToken")
+        ? "Stamp read. Year taken from the date token."
+        : parsed.confident
+          ? "Stamp read."
+          : "",
+    );
+    setDraft((current) => ({
+      ...current,
+      stamps: SELL_DEMO_STAMP,
+      brand: parsed.brand || current.brand,
+      model: parsed.model || current.model,
+      year: parsed.year || current.year,
+      seat: parsed.seat || current.seat,
+      flap: parsed.flap || current.flap,
+      panel: parsed.panel || current.panel,
+      blocks: parsed.blocks || current.blocks,
+      tree: parsed.tree || current.tree,
+      serial: parsed.serial || current.serial,
+      condition: current.condition || "Excellent",
+      photos: { ...demoPlaceholderPhotos(), ...current.photos },
+    }));
+  }, [demo]);
+
   function update<K extends keyof IntakeDraft>(key: K, value: IntakeDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
@@ -241,6 +286,10 @@ export function SellForm() {
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
+    if (demo) {
+      go("done");
+      return;
+    }
     if (!photosReady) {
       setError("Six angles and a serial / stamp photo are required.");
       go("photo.panels");
@@ -278,7 +327,10 @@ export function SellForm() {
       if (target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT")) {
         return;
       }
-      if (currentPhoto && draft.photos[currentPhoto.angle]?.thumb) {
+      if (
+        currentPhoto &&
+        (demo || draft.photos[currentPhoto.angle]?.thumb)
+      ) {
         event.preventDefault();
         const index = ORDER.indexOf(step);
         if (index >= 0 && index < ORDER.length - 1) setStep(ORDER[index + 1]);
@@ -286,13 +338,22 @@ export function SellForm() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [currentPhoto, draft.photos, step]);
+  }, [currentPhoto, demo, draft.photos, step]);
 
   return (
     <form
       onSubmit={onSubmit}
       className="flex min-h-[calc(100dvh-8rem)] flex-col"
     >
+      {demo ? (
+        <p
+          role="status"
+          className="text-[var(--sbs-text-meta)] text-sbs-muted"
+        >
+          {SELL_COPY.demoBanner}
+        </p>
+      ) : null}
+
       <div className="flex items-center justify-between gap-3">
         {step !== "intro" && step !== "done" ? (
           <button
@@ -315,7 +376,7 @@ export function SellForm() {
       </div>
 
       <div key={step} className="sbs-step flex flex-1 flex-col justify-center py-8">
-        {step === "intro" ? <IntroStep onStart={goNext} /> : null}
+        {step === "intro" ? <IntroStep onStart={goNext} demo={demo} /> : null}
 
         {currentPhoto ? (
           <PhotoAsk
@@ -330,6 +391,7 @@ export function SellForm() {
             onFiles={(files) => void attachPhoto(currentPhoto.angle, files)}
             onStamp={applyStamp}
             onContinue={goNext}
+            allowContinue={demo}
           />
         ) : null}
 
@@ -342,6 +404,7 @@ export function SellForm() {
             onFiles={(files) => void attachPhoto("damage", files)}
             onContinue={goNext}
             onSkip={goNext}
+            allowContinue={demo}
           />
         ) : null}
 
@@ -359,13 +422,19 @@ export function SellForm() {
           />
         ) : null}
 
-        {step === "done" ? <DoneStep /> : null}
+        {step === "done" ? <DoneStep demo={demo} /> : null}
       </div>
     </form>
   );
 }
 
-function IntroStep({ onStart }: { onStart: () => void }) {
+function IntroStep({
+  onStart,
+  demo,
+}: {
+  onStart: () => void;
+  demo: boolean;
+}) {
   return (
     <div className="space-y-6">
       <h1
@@ -378,12 +447,22 @@ function IntroStep({ onStart }: { onStart: () => void }) {
       <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
         {SELL_COPY.secondary}
       </p>
-      <Link
-        href="/sell/photo-tips"
-        className="inline-block text-[var(--sbs-text-meta)] text-sbs-muted underline-offset-4 hover:underline"
-      >
-        Photo tips
-      </Link>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <Link
+          href="/sell/photo-tips"
+          className="inline-block text-[var(--sbs-text-meta)] text-sbs-muted underline-offset-4 hover:underline"
+        >
+          Photo tips
+        </Link>
+        {demo ? null : (
+          <Link
+            href="/sell?demo=1"
+            className="inline-block text-[var(--sbs-text-meta)] text-sbs-muted underline-offset-4 hover:underline"
+          >
+            {SELL_COPY.previewDemo}
+          </Link>
+        )}
+      </div>
       <button
         type="button"
         onClick={onStart}
@@ -408,6 +487,7 @@ function PhotoAsk({
   onStamp,
   onContinue,
   onSkip,
+  allowContinue,
 }: {
   title: string;
   helper: string;
@@ -421,6 +501,7 @@ function PhotoAsk({
   onStamp?: (value: string) => void;
   onContinue: () => void;
   onSkip?: () => void;
+  allowContinue?: boolean;
 }) {
   return (
     <div className="space-y-6">
@@ -475,7 +556,7 @@ function PhotoAsk({
         </label>
       ) : null}
 
-      {thumb ? (
+      {thumb || allowContinue ? (
         <button
           type="button"
           onClick={onContinue}
@@ -683,16 +764,18 @@ function DraftStep({
   );
 }
 
-function DoneStep() {
+function DoneStep({ demo }: { demo?: boolean }) {
   return (
     <div className="space-y-6">
       <h2
         className="font-serif font-medium text-sbs-text"
         style={{ fontSize: "var(--sbs-text-hero)" }}
       >
-        {SELL_COPY.done}
+        {demo ? SELL_COPY.demoDone : SELL_COPY.done}
       </h2>
-      <p className="text-sbs-muted">{SELL_COPY.doneBody}</p>
+      <p className="text-sbs-muted">
+        {demo ? SELL_COPY.demoDoneBody : SELL_COPY.doneBody}
+      </p>
       <Link
         href="/collection"
         className="inline-block w-full bg-sbs-accent px-5 py-3.5 text-center text-sm tracking-wide text-sbs-on-accent"

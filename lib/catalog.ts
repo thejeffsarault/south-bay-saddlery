@@ -75,6 +75,10 @@ export const SELL_COPY = {
   verifiedHint: "$150 = inbound label + inspect",
   certainty:
     "Payout 7–10 business days after close · 3-day buyer window · $100 restock on return.",
+  demoBanner: "Demo — not submitted to approval queue",
+  previewDemo: "Preview as demo",
+  demoDone: "Demo complete",
+  demoDoneBody: "Not submitted to the approval queue.",
 } as const;
 
 export type Condition = (typeof CONDITIONS)[number];
