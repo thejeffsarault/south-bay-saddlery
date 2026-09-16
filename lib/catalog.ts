@@ -63,10 +63,10 @@ export const CONDITIONS = [
 
 export const SELL_COPY = {
   headline: "Sell Your Saddle",
-  beat1: "Photos in.",
+  beat1: "Upload photos.",
   beat2: "We write the listing.",
   beat3: "You review & send.",
-  time: "About five minutes.",
+  time: "Takes less than five minutes.",
   begin: "Begin",
   continue: "Continue",
   cta: "Submit",
