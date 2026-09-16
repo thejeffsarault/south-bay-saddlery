@@ -136,7 +136,7 @@ export function ProductGallery({
     setOffsetX(0);
     if (axis === "v") return;
     if (dragged) {
-      const stageWidth = stage.current?.clientWidth ?? width || 320;
+      const stageWidth = stage.current?.clientWidth || width || 320;
       const threshold = Math.max(36, stageWidth * 0.12);
       if (dx <= -threshold) goTo(indexRef.current + 1);
       else if (dx >= threshold) goTo(indexRef.current - 1);
