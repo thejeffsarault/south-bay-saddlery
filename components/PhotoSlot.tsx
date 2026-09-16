@@ -4,8 +4,8 @@ import { useRef } from "react";
 import { SELL_COPY, type PhotoAngleId } from "@/lib/catalog";
 
 const actionClass = {
-  plain: "w-full px-2.5 py-2.5 text-left text-sm leading-snug text-sbs-text",
-  hero: "w-full border border-sbs-border bg-sbs-white px-5 py-6 text-left text-base text-sbs-text",
+  plain: "w-full px-0 py-2 text-left text-sm leading-snug text-sbs-text",
+  hero: "w-full px-0 py-3 text-left text-base text-sbs-text",
 } as const;
 
 function ChooseFromLabel() {

@@ -1,16 +1,23 @@
 export const BODY_ANGLES = [
+  { id: "side", label: "Side", required: true },
+  { id: "other", label: "Other side", required: true },
+  { id: "seat", label: "Seat", required: true },
   { id: "panels", label: "Panels", required: true },
-  { id: "flaps", label: "Flaps", required: true },
-  { id: "underflaps", label: "Underflaps", required: true },
   { id: "billets", label: "Billets", required: true },
-  { id: "front", label: "Front", required: true },
-  { id: "back", label: "Back", required: true },
+] as const;
+
+export const OPTIONAL_ANGLES = [
+  { id: "flaps", label: "Flaps", required: false },
+  { id: "underflaps", label: "Underflaps", required: false },
+  { id: "front", label: "Front", required: false },
+  { id: "back", label: "Back", required: false },
+  { id: "damage", label: "Damage", required: false },
 ] as const;
 
 export const INTAKE_ANGLES = [
   ...BODY_ANGLES,
-  { id: "serial", label: "Serial / stamp", required: true },
-  { id: "damage", label: "Damage (if any)", required: false },
+  { id: "serial", label: "Serial", required: true },
+  ...OPTIONAL_ANGLES,
 ] as const;
 
 export type PhotoAngleId = (typeof INTAKE_ANGLES)[number]["id"];
@@ -60,25 +67,18 @@ export const SELL_COPY = {
   secondary: "Founder reviews before live",
   start: "Start",
   continue: "Continue",
-  cta: "Submit for review",
+  cta: "Submit",
+  skip: "Skip",
   back: "Back",
   takePhoto: "Take photo",
   fromLibrary: "Choose from library",
   fromFiles: "Choose from files",
-  damageSkip: "Skip — none",
-  editPhotos: "Edit photos",
-  done: "Submitted",
-  doneBody: "Founder will review",
-  collection: "Back to Collection",
-  feeLine: "12% success fee on sale.",
+  done: "Sent",
+  collection: "Collection",
+  feeLine: "12% on sale · you keep ~88%",
   verifiedLabel: "Verified · $150",
-  verifiedHint: "$150 = inbound label + inspect",
-  certainty:
-    "Payout 7–10 business days after close · 3-day buyer window · $100 restock on return.",
+  policy: "Payout 7–10 days · 3-day return · $100 restock",
   demoBanner: "Demo — not submitted to approval queue",
-  previewDemo: "Preview as demo",
-  demoDone: "Demo complete",
-  demoDoneBody: "Not submitted to the approval queue.",
 } as const;
 
 export type Condition = (typeof CONDITIONS)[number];
@@ -151,6 +151,7 @@ export type IntakeDraft = {
   description: string;
   pathInterest: PathInterestId | "";
   photos: Partial<Record<PhotoAngleId, PhotoThumb>>;
+  morePhotos: PhotoThumb[];
   needsJeffReview: boolean;
   priceFlags: string[];
 };
@@ -173,7 +174,7 @@ export type QueueSubmission = IntakeDraft & {
   returnZip?: string;
 };
 
-export const MIN_BODY_PHOTOS = 6;
+export const MIN_BODY_PHOTOS = 5;
 export const MIN_PHOTOS = 6;
 export const VERIFICATION_FEE_USD = 150;
 
@@ -187,7 +188,8 @@ export function bodyPhotoCount(photos: IntakeDraft["photos"]) {
 
 export function hasRequiredPhotos(photos: IntakeDraft["photos"]) {
   return (
-    Boolean(photos.serial?.thumb) && bodyPhotoCount(photos) >= MIN_BODY_PHOTOS
+    Boolean(photos.serial?.thumb) &&
+    BODY_ANGLES.every((angle) => Boolean(photos[angle.id]?.thumb))
   );
 }
 

@@ -3,12 +3,11 @@ import type { IntakeDraft, PhotoAngleId } from "@/lib/catalog";
 export const SELL_DEMO_STAMP = "PB 16.5 2A M/M C/C FIN #17 23.23";
 
 const DEMO_STILLS: Partial<Record<PhotoAngleId, string>> = {
+  side: "/listings/ji-001/01-near-side.jpeg",
+  other: "/listings/ji-001/02-off-side.jpeg",
+  seat: "/listings/ji-001/03-seat-top.jpeg",
   panels: "/listings/ji-001/08-panels-underside.jpeg",
-  flaps: "/listings/ji-001/01-near-side.jpeg",
-  underflaps: "/listings/ji-001/06-left-under-flap.jpeg",
   billets: "/listings/ji-001/07-right-under-flap.jpeg",
-  front: "/listings/ji-001/04-front.jpeg",
-  back: "/listings/ji-001/05-rear.jpeg",
   serial: "/listings/ji-001/09-stamps.jpeg",
 };
 

@@ -31,9 +31,9 @@ export default function PhotoTipsPage() {
         ))}
         <li className="flex gap-3">
           <span className="w-6 font-mono text-[var(--sbs-text-meta)] text-sbs-muted">
-            07
+            {String(BODY_ANGLES.length + 1).padStart(2, "0")}
           </span>
-          <span>Serial / stamp — readable crop. Do not invent a serial.</span>
+          <span>Serial — readable crop. Do not invent a serial.</span>
         </li>
       </ol>
       <p className="text-sm text-sbs-muted">

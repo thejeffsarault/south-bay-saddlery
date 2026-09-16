@@ -14,7 +14,7 @@ export default async function SellPage({
 }) {
   const { demo } = await searchParams;
   return (
-    <div className="sbs-page !py-4">
+    <div className="sbs-page !py-8">
       <SellForm demo={isSellDemo(demo)} />
     </div>
   );

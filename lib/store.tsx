@@ -48,6 +48,7 @@ const emptyDraft = (): IntakeDraft => ({
   description: "",
   pathInterest: "self-serve",
   photos: {},
+  morePhotos: [],
   needsJeffReview: false,
   priceFlags: [],
 });
@@ -61,7 +62,10 @@ function readPersisted(): Persisted {
     if (!raw) return { submissions: [], extraListings: [] };
     const parsed = JSON.parse(raw) as Persisted;
     return {
-      submissions: parsed.submissions ?? [],
+      submissions: (parsed.submissions ?? []).map((item) => ({
+        ...item,
+        morePhotos: item.morePhotos ?? [],
+      })),
       extraListings: parsed.extraListings ?? [],
     };
   } catch {
@@ -216,7 +220,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           (angle) => item.photos[angle],
         ),
         photoSrcs,
-        heroSrc: photoSrcs.front || photoSrcs.panels,
+        heroSrc: photoSrcs.side || photoSrcs.front || photoSrcs.panels,
       };
 
       setExtraListings((current) => [listing, ...current]);

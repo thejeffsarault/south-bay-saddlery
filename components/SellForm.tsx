@@ -7,8 +7,8 @@ import {
   hasRequiredPhotos,
   type IntakeDraft,
   type PhotoAngleId,
+  type PhotoThumb,
 } from "@/lib/catalog";
-import { DRAFT_CONDITIONS } from "@/lib/bluebook/types";
 import type { BluebookProposePublic } from "@/lib/bluebook/types";
 import { PhotoActionPair } from "@/components/PhotoSlot";
 import { draftDescription } from "@/lib/draft-copy";
@@ -21,47 +21,61 @@ import { parseVoltaireStamp, type StampToken } from "@/lib/serial/voltaire";
 import { emptyDraft, useStore } from "@/lib/store";
 
 const fieldClass =
-  "w-full border border-sbs-border bg-sbs-surface px-3 py-2.5 text-sm text-sbs-text outline-none focus:border-sbs-black";
+  "w-full border-0 border-b border-sbs-border bg-transparent px-0 py-2 text-sm text-sbs-text outline-none focus:border-sbs-black";
 
-const PHOTO_STEPS = [
-  { id: "photo.panels", angle: "panels", title: "Panels", helper: "Underside panels", n: 1 },
-  { id: "photo.flaps", angle: "flaps", title: "Flaps", helper: "Both flaps", n: 2 },
-  { id: "photo.underflaps", angle: "underflaps", title: "Underflaps", helper: "Under both flaps", n: 3 },
-  { id: "photo.billets", angle: "billets", title: "Billets", helper: "Billet condition", n: 4 },
-  { id: "photo.front", angle: "front", title: "Front", helper: "Pommel / front", n: 5 },
-  { id: "photo.back", angle: "back", title: "Back", helper: "Cantle / rear", n: 6 },
-  { id: "photo.serial", angle: "serial", title: "Serial / stamp", helper: "Must be readable", n: 7 },
+const SINGLE_STEPS = [
+  { id: "photo.side", angle: "side", title: "Side", n: 1 },
+  { id: "photo.other", angle: "other", title: "Other side", n: 2 },
+  { id: "photo.seat", angle: "seat", title: "Seat", n: 3 },
 ] as const;
 
-type PhotoStepId = (typeof PHOTO_STEPS)[number]["id"];
-type StepId = "intro" | PhotoStepId | "photo.damage" | "draft" | "done";
+type SingleStepId = (typeof SINGLE_STEPS)[number]["id"];
+type StepId =
+  | "intro"
+  | SingleStepId
+  | "photo.under"
+  | "photo.serial"
+  | "photo.more"
+  | "draft"
+  | "done";
 
 const ORDER: StepId[] = [
   "intro",
-  ...PHOTO_STEPS.map((step) => step.id),
-  "photo.damage",
+  "photo.side",
+  "photo.other",
+  "photo.seat",
+  "photo.under",
+  "photo.serial",
+  "photo.more",
   "draft",
   "done",
 ];
 
-function photoStep(id: StepId) {
-  return PHOTO_STEPS.find((step) => step.id === id);
+function singleStep(id: StepId) {
+  return SINGLE_STEPS.find((step) => step.id === id);
+}
+
+function progressFor(step: StepId) {
+  if (step === "photo.under") return 4;
+  if (step === "photo.serial") return 5;
+  return singleStep(step)?.n ?? null;
 }
 
 export function SellForm({ demo = false }: { demo?: boolean }) {
   const { submitIntake, notifyJeff } = useStore();
   const [draft, setDraft] = useState<IntakeDraft>(emptyDraft);
   const [step, setStep] = useState<StepId>("intro");
-  const demoSeeded = useRef(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [copyDirty, setCopyDirty] = useState(false);
   const [tokens, setTokens] = useState<StampToken[]>([]);
   const [stampNote, setStampNote] = useState("");
   const advanceRef = useRef<number | null>(null);
+  const demoSeeded = useRef(false);
 
   const photosReady = hasRequiredPhotos(draft.photos);
-  const currentPhoto = photoStep(step);
+  const currentSingle = singleStep(step);
+  const progress = progressFor(step);
   const proposedCopy = useMemo(
     () =>
       draftDescription({
@@ -188,13 +202,7 @@ export function SellForm({ demo = false }: { demo?: boolean }) {
     demoSeeded.current = true;
     const parsed = parseVoltaireStamp(SELL_DEMO_STAMP);
     setTokens(parsed.tokens);
-    setStampNote(
-      parsed.flags.includes("yearFromDateToken")
-        ? "Stamp read. Year taken from the date token."
-        : parsed.confident
-          ? "Stamp read."
-          : "",
-    );
+    setStampNote(parsed.confident ? "Stamp read." : "");
     setDraft((current) => ({
       ...current,
       stamps: SELL_DEMO_STAMP,
@@ -235,19 +243,45 @@ export function SellForm({ demo = false }: { demo?: boolean }) {
     if (index > 0) go(ORDER[index - 1]);
   }
 
+  function scheduleAdvance(from: StepId) {
+    if (advanceRef.current) window.clearTimeout(advanceRef.current);
+    advanceRef.current = window.setTimeout(() => {
+      const index = ORDER.indexOf(from);
+      if (index >= 0 && index < ORDER.length - 1) setStep(ORDER[index + 1]);
+    }, 400);
+  }
+
   async function attachPhoto(angle: PhotoAngleId, files: FileList | File[] | null) {
     const file = files?.[0];
     if (!file) return;
     const thumb = await fileToThumb(file);
+    const nextPhotos = { ...draft.photos, [angle]: thumb };
     setDraft((current) => ({
       ...current,
       photos: { ...current.photos, [angle]: thumb },
     }));
-    if (advanceRef.current) window.clearTimeout(advanceRef.current);
-    advanceRef.current = window.setTimeout(() => {
-      const index = ORDER.indexOf(step);
-      if (index >= 0 && index < ORDER.length - 1) setStep(ORDER[index + 1]);
-    }, 400);
+    if (angle === "panels" || angle === "billets") {
+      if (nextPhotos.panels?.thumb && nextPhotos.billets?.thumb) {
+        scheduleAdvance("photo.under");
+      }
+    } else if (angle === "serial") {
+      scheduleAdvance("photo.serial");
+    } else {
+      const match = SINGLE_STEPS.find((item) => item.angle === angle);
+      if (match) scheduleAdvance(match.id);
+    }
+  }
+
+  async function attachMore(files: FileList | File[] | null) {
+    if (!files?.length) return;
+    const extras: PhotoThumb[] = [];
+    for (const file of Array.from(files)) {
+      extras.push(await fileToThumb(file));
+    }
+    setDraft((current) => ({
+      ...current,
+      morePhotos: [...current.morePhotos, ...extras],
+    }));
   }
 
   function applyStamp(value: string) {
@@ -256,18 +290,10 @@ export function SellForm({ demo = false }: { demo?: boolean }) {
     setDraft((current) => {
       const next = { ...current, stamps: value };
       if (!parsed.confident) {
-        setStampNote(
-          value.trim()
-            ? "Could not decode this stamp. Enter details on the draft — we do not invent a read."
-            : "",
-        );
+        setStampNote("");
         return next;
       }
-      setStampNote(
-        parsed.flags.includes("yearFromDateToken")
-          ? "Stamp read. Year taken from the date token."
-          : "Stamp read.",
-      );
+      setStampNote("");
       return {
         ...next,
         brand: parsed.brand,
@@ -291,8 +317,8 @@ export function SellForm({ demo = false }: { demo?: boolean }) {
       return;
     }
     if (!photosReady) {
-      setError("Six angles and a serial / stamp photo are required.");
-      go("photo.panels");
+      setError("Side, other side, seat, under, and serial are required.");
+      go("photo.side");
       return;
     }
     if (!draft.contactName.trim() || !draft.email.trim()) {
@@ -320,41 +346,22 @@ export function SellForm({ demo = false }: { demo?: boolean }) {
     go("done");
   }
 
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (event.key !== "Enter" || event.shiftKey) return;
-      const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT")) {
-        return;
-      }
-      if (
-        currentPhoto &&
-        (demo || draft.photos[currentPhoto.angle]?.thumb)
-      ) {
-        event.preventDefault();
-        const index = ORDER.indexOf(step);
-        if (index >= 0 && index < ORDER.length - 1) setStep(ORDER[index + 1]);
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [currentPhoto, demo, draft.photos, step]);
+  const underReady = Boolean(
+    draft.photos.panels?.thumb && draft.photos.billets?.thumb,
+  );
 
   return (
     <form
       onSubmit={onSubmit}
-      className="flex min-h-[calc(100dvh-8rem)] flex-col"
+      className="flex min-h-[calc(100dvh-7rem)] flex-col"
     >
       {demo ? (
-        <p
-          role="status"
-          className="text-[var(--sbs-text-meta)] text-sbs-muted"
-        >
+        <p role="status" className="text-[var(--sbs-text-meta)] text-sbs-muted">
           {SELL_COPY.demoBanner}
         </p>
       ) : null}
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="relative flex min-h-8 items-center">
         {step !== "intro" && step !== "done" ? (
           <button
             type="button"
@@ -363,110 +370,94 @@ export function SellForm({ demo = false }: { demo?: boolean }) {
           >
             {SELL_COPY.back}
           </button>
-        ) : (
-          <span />
-        )}
-        {currentPhoto ? (
-          <p className="font-mono text-[var(--sbs-text-meta)] text-sbs-muted">
-            {currentPhoto.n} / 7
+        ) : null}
+        {progress ? (
+          <p className="pointer-events-none absolute inset-x-0 text-center font-mono text-[var(--sbs-text-meta)] text-sbs-muted opacity-40">
+            {progress} / 5
           </p>
-        ) : (
-          <span />
-        )}
+        ) : null}
       </div>
 
-      <div key={step} className="sbs-step flex flex-1 flex-col justify-center py-8">
-        {step === "intro" ? <IntroStep onStart={goNext} demo={demo} /> : null}
+      <div key={step} className="sbs-step flex flex-1 flex-col justify-center py-16">
+        {step === "intro" ? <IntroStep onStart={goNext} /> : null}
 
-        {currentPhoto ? (
+        {currentSingle ? (
           <PhotoAsk
-            title={currentPhoto.title}
-            helper={currentPhoto.helper}
-            angle={currentPhoto.angle}
-            thumb={draft.photos[currentPhoto.angle]?.thumb}
-            stamp={step === "photo.serial"}
-            stamps={draft.stamps}
-            tokens={tokens}
-            stampNote={stampNote}
-            onFiles={(files) => void attachPhoto(currentPhoto.angle, files)}
-            onStamp={applyStamp}
+            title={currentSingle.title}
+            angle={currentSingle.angle}
+            thumb={draft.photos[currentSingle.angle]?.thumb}
+            onFiles={(files) => void attachPhoto(currentSingle.angle, files)}
             onContinue={goNext}
-            allowContinue={demo}
+            allowContinue={demo || Boolean(draft.photos[currentSingle.angle]?.thumb)}
           />
         ) : null}
 
-        {step === "photo.damage" ? (
-          <PhotoAsk
-            title="Damage?"
-            helper="Any damage close-up"
-            angle="damage"
-            thumb={draft.photos.damage?.thumb}
-            onFiles={(files) => void attachPhoto("damage", files)}
+        {step === "photo.under" ? (
+          <UnderStep
+            panels={draft.photos.panels?.thumb}
+            billets={draft.photos.billets?.thumb}
+            onPanels={(files) => void attachPhoto("panels", files)}
+            onBillets={(files) => void attachPhoto("billets", files)}
             onContinue={goNext}
+            allowContinue={demo || underReady}
+          />
+        ) : null}
+
+        {step === "photo.serial" ? (
+          <PhotoAsk
+            title="Serial"
+            angle="serial"
+            thumb={draft.photos.serial?.thumb}
+            onFiles={(files) => void attachPhoto("serial", files)}
+            onContinue={goNext}
+            allowContinue={demo || Boolean(draft.photos.serial?.thumb)}
+            stamp={demo ? draft.stamps : undefined}
+            tokens={demo ? tokens : undefined}
+            stampNote={demo ? stampNote : undefined}
+            onStamp={demo ? applyStamp : undefined}
+          />
+        ) : null}
+
+        {step === "photo.more" ? (
+          <MoreStep
+            extras={draft.morePhotos}
+            onFiles={(files) => void attachMore(files)}
             onSkip={goNext}
-            allowContinue={demo}
           />
         ) : null}
 
         {step === "draft" ? (
           <DraftStep
             draft={draft}
-            tokens={tokens}
-            stampNote={stampNote}
             error={error}
             busy={busy}
             onUpdate={update}
-            onStamp={applyStamp}
-            onEditPhotos={() => go("photo.panels")}
             onCopyDirty={() => setCopyDirty(true)}
           />
         ) : null}
 
-        {step === "done" ? <DoneStep demo={demo} /> : null}
+        {step === "done" ? <DoneStep /> : null}
       </div>
     </form>
   );
 }
 
-function IntroStep({
-  onStart,
-  demo,
-}: {
-  onStart: () => void;
-  demo: boolean;
-}) {
+function IntroStep({ onStart }: { onStart: () => void }) {
   return (
-    <div className="space-y-6">
-      <h1
-        className="font-serif font-medium leading-[1.1] text-sbs-text"
-        style={{ fontSize: "var(--sbs-text-hero)" }}
-      >
-        {SELL_COPY.headline}
-      </h1>
-      <p className="text-lg text-sbs-text">{SELL_COPY.microcopy}</p>
-      <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
-        {SELL_COPY.secondary}
-      </p>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Link
-          href="/sell/photo-tips"
-          className="inline-block text-[var(--sbs-text-meta)] text-sbs-muted underline-offset-4 hover:underline"
+    <div className="space-y-16">
+      <div className="space-y-6">
+        <h1
+          className="font-serif font-medium leading-[1.1] text-sbs-text"
+          style={{ fontSize: "var(--sbs-text-hero)" }}
         >
-          Photo tips
-        </Link>
-        {demo ? null : (
-          <Link
-            href="/sell?demo=1"
-            className="inline-block text-[var(--sbs-text-meta)] text-sbs-muted underline-offset-4 hover:underline"
-          >
-            {SELL_COPY.previewDemo}
-          </Link>
-        )}
+          {SELL_COPY.headline}
+        </h1>
+        <p className="text-lg text-sbs-text">{SELL_COPY.microcopy}</p>
       </div>
       <button
         type="button"
         onClick={onStart}
-        className="w-full bg-sbs-accent px-5 py-3.5 text-sm tracking-wide text-sbs-on-accent"
+        className="rounded-full bg-sbs-accent px-8 py-3 text-sm tracking-wide text-sbs-on-accent"
       >
         {SELL_COPY.start}
       </button>
@@ -476,50 +467,39 @@ function IntroStep({
 
 function PhotoAsk({
   title,
-  helper,
   angle,
   thumb,
+  onFiles,
+  onContinue,
+  allowContinue,
   stamp,
-  stamps,
   tokens,
   stampNote,
-  onFiles,
   onStamp,
-  onContinue,
-  onSkip,
-  allowContinue,
 }: {
   title: string;
-  helper: string;
   angle: PhotoAngleId;
   thumb?: string;
-  stamp?: boolean;
-  stamps?: string;
+  onFiles: (files: FileList | null) => void;
+  onContinue: () => void;
+  allowContinue?: boolean;
+  stamp?: string;
   tokens?: StampToken[];
   stampNote?: string;
-  onFiles: (files: FileList | null) => void;
   onStamp?: (value: string) => void;
-  onContinue: () => void;
-  onSkip?: () => void;
-  allowContinue?: boolean;
 }) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2
-          className="font-serif font-medium text-sbs-text"
-          style={{ fontSize: "var(--sbs-text-hero)" }}
-        >
-          {title}
-        </h2>
-        <p className="mt-2 text-sbs-muted">{helper}</p>
-      </div>
+    <div className="space-y-14">
+      <h2
+        className="font-serif font-medium text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        {title}
+      </h2>
 
       {thumb ? (
-        <div className="relative overflow-hidden border border-sbs-border">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={thumb} alt="" className="max-h-64 w-full object-cover" />
-        </div>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={thumb} alt="" className="max-h-56 w-full object-contain" />
       ) : null}
 
       <PhotoActionPair
@@ -529,180 +509,222 @@ function PhotoAsk({
         onLibrary={onFiles}
       />
 
-      {stamp ? (
+      {onStamp ? (
         <label className="block space-y-1">
-          <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
-            Stamp
-          </span>
           <textarea
-            className={`${fieldClass} min-h-24`}
-            value={stamps ?? ""}
-            onChange={(e) => onStamp?.(e.target.value)}
-            placeholder="PB 16.5 2A M/M C/C FIN #17 23.23"
+            className={`${fieldClass} min-h-16 text-sbs-muted`}
+            value={stamp ?? ""}
+            onChange={(e) => onStamp(e.target.value)}
+            aria-label="Stamp"
           />
           {tokens?.length ? (
-            <div className="flex flex-wrap gap-1.5 pt-2">
+            <div className="flex flex-wrap gap-1.5 pt-1">
               {tokens.map((token, index) => (
                 <span
                   key={`${token.raw}-${index}`}
-                  className="border border-sbs-border px-2 py-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-sbs-muted"
+                  className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-sbs-muted"
                 >
                   {token.kind} {token.raw}
                 </span>
               ))}
             </div>
           ) : null}
-          {stampNote ? <p className="text-sm text-sbs-muted">{stampNote}</p> : null}
+          {stampNote ? (
+            <p className="text-[var(--sbs-text-meta)] text-sbs-muted">{stampNote}</p>
+          ) : null}
         </label>
       ) : null}
 
-      {thumb || allowContinue ? (
+      {allowContinue ? (
         <button
           type="button"
           onClick={onContinue}
-          className="w-full bg-sbs-accent px-5 py-3.5 text-sm tracking-wide text-sbs-on-accent"
+          className="text-sm text-sbs-text"
         >
           {SELL_COPY.continue}
-        </button>
-      ) : null}
-
-      {onSkip ? (
-        <button
-          type="button"
-          onClick={onSkip}
-          className="w-full text-sm text-sbs-muted"
-        >
-          {SELL_COPY.damageSkip}
         </button>
       ) : null}
     </div>
   );
 }
 
-function DraftStep({
-  draft,
-  tokens,
-  stampNote,
-  error,
-  busy,
-  onUpdate,
-  onStamp,
-  onEditPhotos,
-  onCopyDirty,
+function UnderStep({
+  panels,
+  billets,
+  onPanels,
+  onBillets,
+  onContinue,
+  allowContinue,
 }: {
-  draft: IntakeDraft;
-  tokens: StampToken[];
-  stampNote: string;
-  error: string;
-  busy: boolean;
-  onUpdate: <K extends keyof IntakeDraft>(key: K, value: IntakeDraft[K]) => void;
-  onStamp: (value: string) => void;
-  onEditPhotos: () => void;
-  onCopyDirty: () => void;
+  panels?: string;
+  billets?: string;
+  onPanels: (files: FileList | null) => void;
+  onBillets: (files: FileList | null) => void;
+  onContinue: () => void;
+  allowContinue?: boolean;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-14">
       <h2
         className="font-serif font-medium text-sbs-text"
         style={{ fontSize: "var(--sbs-text-hero)" }}
       >
-        Your draft
+        Under
       </h2>
-
-      <label className="block space-y-1">
-        <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
-          Stamp
-        </span>
-        <textarea
-          className={`${fieldClass} min-h-24`}
-          value={draft.stamps}
-          onChange={(e) => onStamp(e.target.value)}
-          placeholder="PB 16.5 2A M/M C/C FIN #17 23.23"
+      <div className="space-y-10">
+        <UnderSlot
+          id="panels"
+          label="Panels"
+          thumb={panels}
+          onFiles={onPanels}
         />
-      </label>
-      {tokens.length ? (
-        <div className="flex flex-wrap gap-1.5">
-          {tokens.map((token, index) => (
-            <span
-              key={`${token.raw}-${index}`}
-              className="border border-sbs-border px-2 py-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-sbs-muted"
-            >
-              {token.kind} {token.raw}
-            </span>
+        <UnderSlot
+          id="billets"
+          label="Billets"
+          thumb={billets}
+          onFiles={onBillets}
+        />
+      </div>
+      {allowContinue ? (
+        <button
+          type="button"
+          onClick={onContinue}
+          className="text-sm text-sbs-text"
+        >
+          {SELL_COPY.continue}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function UnderSlot({
+  id,
+  label,
+  thumb,
+  onFiles,
+}: {
+  id: string;
+  label: string;
+  thumb?: string;
+  onFiles: (files: FileList | null) => void;
+}) {
+  return (
+    <div className="space-y-4 border-b border-sbs-border pb-8 last:border-b-0 last:pb-0">
+      <p className="text-sm text-sbs-text">{label}</p>
+      {thumb ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={thumb} alt="" className="max-h-40 w-full object-contain" />
+      ) : null}
+      <PhotoActionPair
+        id={`step-${id}`}
+        variant="plain"
+        onCamera={onFiles}
+        onLibrary={onFiles}
+      />
+    </div>
+  );
+}
+
+function MoreStep({
+  extras,
+  onFiles,
+  onSkip,
+}: {
+  extras: PhotoThumb[];
+  onFiles: (files: FileList | null) => void;
+  onSkip: () => void;
+}) {
+  return (
+    <div className="space-y-14">
+      <h2
+        className="font-serif font-medium text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        More
+      </h2>
+      {extras.length ? (
+        <div className="flex flex-wrap gap-3">
+          {extras.map((photo, index) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={`${photo.name}-${index}`}
+              src={photo.thumb}
+              alt=""
+              className="h-20 w-20 object-cover"
+            />
           ))}
         </div>
       ) : null}
-      {stampNote ? <p className="text-sm text-sbs-muted">{stampNote}</p> : null}
+      <PhotoActionPair
+        id="step-more"
+        variant="hero"
+        libraryMultiple
+        onCamera={onFiles}
+        onLibrary={onFiles}
+      />
+      <button type="button" onClick={onSkip} className="text-sm text-sbs-muted">
+        {SELL_COPY.skip}
+      </button>
+    </div>
+  );
+}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Brand" value={draft.brand} onChange={(v) => onUpdate("brand", v)} />
-        <Field label="Model" value={draft.model} onChange={(v) => onUpdate("model", v)} />
-        <Field label="Year" value={draft.year} onChange={(v) => onUpdate("year", v)} />
-        <Field label="Seat" value={draft.seat} onChange={(v) => onUpdate("seat", v)} />
-        <Field label="Flap" value={draft.flap} onChange={(v) => onUpdate("flap", v)} />
-        <Field label="Panel" value={draft.panel} onChange={(v) => onUpdate("panel", v)} />
-        <Field label="Serial" value={draft.serial} onChange={(v) => onUpdate("serial", v)} />
-        <label className="block space-y-1">
-          <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
-            Condition
-          </span>
-          <select
-            className={fieldClass}
-            value={draft.condition}
-            onChange={(e) =>
-              onUpdate("condition", e.target.value as IntakeDraft["condition"])
-            }
-          >
-            <option value="">Select</option>
-            {DRAFT_CONDITIONS.map((condition) => (
-              <option key={condition} value={condition}>
-                {condition}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block space-y-1 sm:col-span-2">
-          <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
-            Proposed list
-          </span>
-          <input
-            className={fieldClass}
-            inputMode="decimal"
-            value={draft.priceExpectation}
-            onChange={(e) => {
-              onUpdate("priceExpectation", e.target.value);
-              onUpdate("needsJeffReview", !e.target.value.trim());
-            }}
-            placeholder={draft.needsJeffReview ? "Founder will price" : ""}
-          />
-        </label>
-      </div>
-
-      {draft.needsJeffReview ? (
-        <p className="text-sm text-sbs-muted">
-          No Blue Book match. Founder will price — no estimate invented.
-        </p>
-      ) : draft.priceExpectation ? (
-        <p className="text-sm text-sbs-muted">Blue Book draft price.</p>
-      ) : null}
+function DraftStep({
+  draft,
+  error,
+  busy,
+  onUpdate,
+  onCopyDirty,
+}: {
+  draft: IntakeDraft;
+  error: string;
+  busy: boolean;
+  onUpdate: <K extends keyof IntakeDraft>(key: K, value: IntakeDraft[K]) => void;
+  onCopyDirty: () => void;
+}) {
+  return (
+    <div className="space-y-12">
+      <h2
+        className="font-serif font-medium text-sbs-text"
+        style={{ fontSize: "var(--sbs-text-hero)" }}
+      >
+        Draft
+      </h2>
 
       <p className="text-sm text-sbs-text">{SELL_COPY.feeLine}</p>
 
-      <label className="block space-y-1">
-        <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
-          Description
-        </span>
-        <textarea
-          className={`${fieldClass} min-h-24`}
-          value={draft.description}
-          onChange={(e) => {
-            onCopyDirty();
-            onUpdate("description", e.target.value);
-          }}
-        />
-      </label>
+      <button
+        type="button"
+        aria-pressed={draft.pathInterest === "verified"}
+        onClick={() =>
+          onUpdate(
+            "pathInterest",
+            draft.pathInterest === "verified" ? "self-serve" : "verified",
+          )
+        }
+        className={`text-left text-sm ${
+          draft.pathInterest === "verified" ? "text-sbs-text" : "text-sbs-muted"
+        }`}
+      >
+        {SELL_COPY.verifiedLabel}
+      </button>
 
-      <div className="grid gap-3">
+      <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
+        {SELL_COPY.policy}
+      </p>
+
+      <textarea
+        className={`${fieldClass} min-h-24`}
+        value={draft.description}
+        onChange={(e) => {
+          onCopyDirty();
+          onUpdate("description", e.target.value);
+        }}
+        aria-label="Description"
+      />
+
+      <div className="space-y-8">
         <Field
           label="Name"
           value={draft.contactName}
@@ -718,67 +740,31 @@ function DraftStep({
         />
       </div>
 
-      <button
-        type="button"
-        aria-pressed={draft.pathInterest === "verified"}
-        onClick={() =>
-          onUpdate(
-            "pathInterest",
-            draft.pathInterest === "verified" ? "self-serve" : "verified",
-          )
-        }
-        className={`w-full border px-3 py-3 text-left ${
-          draft.pathInterest === "verified"
-            ? "border-sbs-black"
-            : "border-sbs-border"
-        }`}
-      >
-        <span className="block text-sm text-sbs-text">
-          {SELL_COPY.verifiedLabel}
-        </span>
-        <span className="mt-1 block text-[var(--sbs-text-meta)] text-sbs-muted">
-          {SELL_COPY.verifiedHint}
-        </span>
-      </button>
-      <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
-        {SELL_COPY.certainty}
-      </p>
-
       {error ? <p className="text-sm text-sbs-text">{error}</p> : null}
 
       <button
         type="submit"
         disabled={busy}
-        className="w-full bg-sbs-accent px-5 py-3.5 text-sm tracking-wide text-sbs-on-accent disabled:opacity-60"
+        className="rounded-full bg-sbs-accent px-8 py-3 text-sm tracking-wide text-sbs-on-accent disabled:opacity-60"
       >
         {busy ? "Sending…" : SELL_COPY.cta}
-      </button>
-      <button
-        type="button"
-        onClick={onEditPhotos}
-        className="w-full text-sm text-sbs-muted"
-      >
-        {SELL_COPY.editPhotos}
       </button>
     </div>
   );
 }
 
-function DoneStep({ demo }: { demo?: boolean }) {
+function DoneStep() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-16">
       <h2
         className="font-serif font-medium text-sbs-text"
         style={{ fontSize: "var(--sbs-text-hero)" }}
       >
-        {demo ? SELL_COPY.demoDone : SELL_COPY.done}
+        {SELL_COPY.done}
       </h2>
-      <p className="text-sbs-muted">
-        {demo ? SELL_COPY.demoDoneBody : SELL_COPY.doneBody}
-      </p>
       <Link
         href="/collection"
-        className="inline-block w-full bg-sbs-accent px-5 py-3.5 text-center text-sm tracking-wide text-sbs-on-accent"
+        className="inline-block rounded-full bg-sbs-accent px-8 py-3 text-sm tracking-wide text-sbs-on-accent"
       >
         {SELL_COPY.collection}
       </Link>
@@ -801,9 +787,7 @@ function Field({
 }) {
   return (
     <label className="block space-y-1">
-      <span className="text-[var(--sbs-text-meta)] uppercase tracking-[0.14em] text-sbs-muted">
-        {label}
-      </span>
+      <span className="text-[var(--sbs-text-meta)] text-sbs-muted">{label}</span>
       <input
         type={type}
         className={fieldClass}

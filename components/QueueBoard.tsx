@@ -154,6 +154,15 @@ export function QueueBoard() {
                     />
                   );
                 })}
+                {(item.morePhotos ?? []).map((photo, index) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={`more-${photo.name}-${index}`}
+                    src={photo.thumb}
+                    alt=""
+                    className="aspect-square w-full object-cover"
+                  />
+                ))}
               </div>
             ) : (
               <p className="mt-3 text-xs text-sbs-muted">
