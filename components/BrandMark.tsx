@@ -18,8 +18,8 @@ export function BrandMark({
     : "/brand/SBS-logo-black.svg";
   const imgClass =
     size === "footer"
-      ? "h-12 w-auto max-w-[220px]"
-      : "h-11 w-auto max-w-[200px] sm:h-12 sm:max-w-[240px]";
+      ? "h-8 w-auto max-w-[160px]"
+      : "h-7 w-auto max-w-[148px] sm:h-8 sm:max-w-[168px]";
 
   return (
     <span className="block leading-none">

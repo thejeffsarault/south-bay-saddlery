@@ -7,16 +7,12 @@ export const metadata: Metadata = {
 
 export default function SellPage() {
   return (
-    <div className="space-y-6">
-      <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
-        Intake
-      </p>
-      <h1 className="font-serif text-4xl text-sbs-text">Sell Your Saddle</h1>
-      <p className="text-sbs-ink">
-        Phone-first intake for a pre-owned English saddle. About five minutes.
-        Nothing is live until a founder approves and publishes from the queue.
-        Verified saddles ship FedEx to SBS — ship/receive only, no drop-offs
-        or barn visits. Receiving 9am–5pm (local).
+    <div className="sbs-page space-y-6">
+      <h1 className="font-serif text-3xl font-medium text-sbs-text sm:text-4xl">
+        Sell Your Saddle
+      </h1>
+      <p className="text-sm text-sbs-muted">
+        List in minutes · founder review before live
       </p>
       <SellForm />
     </div>

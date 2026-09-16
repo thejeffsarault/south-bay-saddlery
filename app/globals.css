@@ -22,6 +22,31 @@
   --cognac-soft: var(--sbs-muted);
   --brass: var(--sbs-white);
   --border: var(--sbs-border);
+
+  --sbs-font-display: var(--font-cormorant), "Times New Roman", serif;
+  --sbs-font-body: var(--font-source-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --sbs-font-mono: var(--font-ibm-plex), ui-monospace, monospace;
+
+  --sbs-text-hero: clamp(1.75rem, 5vw, 2.75rem);
+  --sbs-text-title: 1.125rem;
+  --sbs-text-body: 0.9375rem;
+  --sbs-text-meta: 0.75rem;
+  --sbs-text-badge: 0.6875rem;
+
+  --sbs-space-1: 0.25rem;
+  --sbs-space-2: 0.5rem;
+  --sbs-space-3: 0.75rem;
+  --sbs-space-4: 1rem;
+  --sbs-space-5: 1.5rem;
+  --sbs-space-6: 2rem;
+  --sbs-space-7: 3rem;
+  --sbs-space-8: 4rem;
+
+  --sbs-page-pad-x: 1rem;
+  --sbs-page-pad-x-md: 1.5rem;
+  --sbs-max: 80rem;
+  --sbs-radius: 0;
+  --sbs-radius-pill: 999px;
 }
 
 @theme inline {
@@ -58,7 +83,8 @@ html {
 body {
   background: var(--sbs-bg);
   color: var(--sbs-text);
-  font-family: var(--font-source-sans), "Source Sans 3", sans-serif;
+  font-family: var(--sbs-font-body);
+  font-size: var(--sbs-text-body);
 }
 
 label,
@@ -67,7 +93,7 @@ a,
 input,
 select,
 textarea {
-  scroll-margin-bottom: 6.5rem;
+  scroll-margin-bottom: 4rem;
 }
 
 ::selection {
@@ -94,12 +120,69 @@ textarea {
 .sbs-badge {
   display: inline-flex;
   align-items: center;
-  background: #ffffff;
-  border: 1px solid #000000;
-  border-radius: 999px;
-  color: #000000;
-  font-size: 0.6875rem;
+  background: var(--sbs-white);
+  border: 1px solid var(--sbs-black);
+  border-radius: var(--sbs-radius-pill);
+  color: var(--sbs-black);
+  font-size: var(--sbs-text-badge);
   font-weight: 600;
   line-height: 1.2;
   padding: 0.2rem 0.55rem;
+}
+
+.sbs-page {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 48rem;
+  padding: var(--sbs-space-6) var(--sbs-page-pad-x);
+}
+
+.sbs-page-wide {
+  margin-inline: auto;
+  width: 100%;
+  max-width: var(--sbs-max);
+  padding: var(--sbs-space-6) var(--sbs-page-pad-x);
+}
+
+/* Emily lock: 2-up from 0px, 4-up from 1024. Never default to 1-col. */
+.sbs-collection-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: var(--sbs-space-3);
+}
+
+.sbs-gallery {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sbs-gallery::-webkit-scrollbar {
+  display: none;
+}
+
+.sbs-hero {
+  height: calc(100dvh - 3.25rem);
+  min-height: 28rem;
+  background: var(--sbs-white);
+}
+
+@media (min-width: 640px) {
+  .sbs-page,
+  .sbs-page-wide {
+    padding-inline: var(--sbs-page-pad-x-md);
+  }
+
+  .sbs-collection-grid {
+    gap: var(--sbs-space-4);
+  }
+}
+
+@media (min-width: 1024px) {
+  .sbs-collection-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
 }

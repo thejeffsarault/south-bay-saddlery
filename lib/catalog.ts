@@ -158,6 +158,9 @@ export function hasRequiredPhotos(photos: IntakeDraft["photos"]) {
   );
 }
 
+export const FULFILLMENT_LINE = "Ships via escrow · no walk-ins";
+export const WEAR_MAX_CHARS = 280;
+
 export function listingName(input: {
   brand: string;
   model: string;
@@ -168,6 +171,28 @@ export function listingName(input: {
     .map((part) => part.trim())
     .filter(Boolean)
     .join(" ");
+}
+
+export function cardTitle(input: { brand: string; model: string; seat: string }) {
+  return [input.brand, input.model, input.seat]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+export function conditionLine(listing: {
+  condition: string;
+  includesCover?: boolean;
+}) {
+  return listing.includesCover
+    ? `${listing.condition} · cover`
+    : listing.condition;
+}
+
+export function clipText(value: string, max: number) {
+  const trimmed = value.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, Math.max(0, max - 1)).trimEnd()}…`;
 }
 
 export function formatUsd(value: number) {

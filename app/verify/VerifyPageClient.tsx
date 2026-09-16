@@ -5,7 +5,7 @@ import { VerifyUpsell } from "@/components/VerifyUpsell";
 
 export function VerifyPageClient({ submissionId }: { submissionId?: string }) {
   return (
-    <div className="space-y-6">
+    <div className="sbs-page space-y-6">
       <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
         Verification
       </p>

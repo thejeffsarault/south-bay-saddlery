@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, IBM_Plex_Mono, Source_Sans_3 } from "next/font/google";
-import { MobileDock, SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { StoreProvider } from "@/lib/store";
 import "./globals.css";
 
@@ -27,8 +27,7 @@ export const metadata: Metadata = {
     default: "South Bay Saddlery",
     template: "%s · South Bay Saddlery",
   },
-  description:
-    "Mobile-first marketplace for pre-owned English saddles: Sell Your Saddle, Collection, Details, and founder approval.",
+  description: "Exceptional pre-owned English saddles. Shipping and escrow only.",
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -50,11 +49,8 @@ export default function RootLayout({
       >
         <StoreProvider>
           <SiteHeader />
-          <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-32 pt-8 sm:pb-16">
-            {children}
-          </main>
+          <main className="w-full flex-1">{children}</main>
           <SiteFooter />
-          <MobileDock />
         </StoreProvider>
       </body>
     </html>

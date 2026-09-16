@@ -13,7 +13,7 @@ export default async function SellReceivedPage({
 }) {
   const { id, path } = await searchParams;
   return (
-    <div className="space-y-5">
+    <div className="sbs-page space-y-5">
       <p className="font-mono text-[0.68rem] uppercase tracking-[0.28em] text-sbs-muted">
         Intake
       </p>

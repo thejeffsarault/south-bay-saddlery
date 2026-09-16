@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Collection",
+  title: "The Collection",
 };
 
 export default function CollectionLayout({
