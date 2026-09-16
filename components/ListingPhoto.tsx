@@ -28,7 +28,7 @@ export function ListingPhoto({
 
   return (
     <figure
-      className={`relative overflow-hidden bg-sbs-white ${className}`}
+      className={`relative block overflow-hidden bg-sbs-white ${className}`}
       style={{ borderRadius: "var(--sbs-radius)" }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}

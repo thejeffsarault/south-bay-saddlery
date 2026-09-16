@@ -1,0 +1,840 @@
+{
+  "version": "2026-06-01",
+  "generatedAt": "2026-09-16T07:38:43.143738Z",
+  "source": "South Bay Saddlery Blue Book xlsx",
+  "locks": {
+    "endpoint": "POST /api/pricing/bluebook-propose",
+    "dataMode": "precomputed_json",
+    "vdNamedModelDefault": "elegance",
+    "modelAssumption": "elegance_default"
+  },
+  "families": {
+    "group_a": {
+      "brands": [
+        "Meyer",
+        "Antares",
+        "Butet",
+        "CWD",
+        "Delgrange",
+        "Devoucoux",
+        "Arion"
+      ],
+      "sellingByYear": {
+        "2026": {
+          "likeNew": 5790,
+          "excellent": 5290,
+          "good": 4990
+        },
+        "2025": {
+          "likeNew": 5490,
+          "excellent": 4990,
+          "good": 4690
+        },
+        "2024": {
+          "likeNew": 4990,
+          "excellent": 4690,
+          "good": 4390
+        },
+        "2023": {
+          "likeNew": 4690,
+          "excellent": 4390,
+          "good": 4090
+        },
+        "2022": {
+          "likeNew": 4290,
+          "excellent": 3990,
+          "good": 3690
+        },
+        "2021": {
+          "likeNew": 3790,
+          "excellent": 3490,
+          "good": 3190
+        },
+        "2020": {
+          "likeNew": 3490,
+          "excellent": 3190,
+          "good": 2890
+        },
+        "2019": {
+          "likeNew": 3290,
+          "excellent": 2990,
+          "good": 2690
+        },
+        "2018": {
+          "likeNew": 3190,
+          "excellent": 2890,
+          "good": 2590
+        },
+        "2017": {
+          "likeNew": 3090,
+          "excellent": 2790,
+          "good": 2490
+        },
+        "2016": {
+          "likeNew": 2990,
+          "excellent": 2690,
+          "good": 2390
+        },
+        "2015": {
+          "likeNew": 2890,
+          "excellent": 2590,
+          "good": 2290
+        },
+        "2014": {
+          "likeNew": 2790,
+          "excellent": 2490,
+          "good": 2190
+        },
+        "2013": {
+          "likeNew": 2690,
+          "excellent": 2390,
+          "good": 2090
+        },
+        "2012": {
+          "likeNew": 2590,
+          "excellent": 2290,
+          "good": 1990
+        },
+        "2011": {
+          "likeNew": 2490,
+          "excellent": 2190,
+          "good": 1890
+        },
+        "2010": {
+          "likeNew": 2390,
+          "excellent": 2090,
+          "good": 1790
+        },
+        "2009": {
+          "likeNew": 2290,
+          "excellent": 1990,
+          "good": 1690
+        },
+        "2008": {
+          "likeNew": 2190,
+          "excellent": 1890,
+          "good": 1590
+        },
+        "2007": {
+          "likeNew": 2090,
+          "excellent": 1790,
+          "good": 1490
+        },
+        "2006": {
+          "likeNew": 1990,
+          "excellent": 1690,
+          "good": 1390
+        },
+        "2003": {
+          "likeNew": 1890,
+          "excellent": 1590,
+          "good": 1290
+        },
+        "2004": {
+          "likeNew": 1790,
+          "excellent": 1490,
+          "good": 1190
+        }
+      },
+      "tradeInByYearInternal": {
+        "2026": {
+          "likeNew": 3200,
+          "excellent": 3000,
+          "good": 2800
+        },
+        "2025": {
+          "likeNew": 3000,
+          "excellent": 2800,
+          "good": 2600
+        },
+        "2024": {
+          "likeNew": 2600,
+          "excellent": 2400,
+          "good": 2200
+        },
+        "2023": {
+          "likeNew": 2200,
+          "excellent": 2000,
+          "good": 1800
+        },
+        "2022": {
+          "likeNew": 1900,
+          "excellent": 1700,
+          "good": 1500
+        },
+        "2021": {
+          "likeNew": 1800,
+          "excellent": 1600,
+          "good": 1400
+        },
+        "2020": {
+          "likeNew": 1700,
+          "excellent": 1500,
+          "good": 1300
+        },
+        "2019": {
+          "likeNew": 1600,
+          "excellent": 1400,
+          "good": 1200
+        },
+        "2018": {
+          "likeNew": 1500,
+          "excellent": 1300,
+          "good": 1100
+        },
+        "2017": {
+          "likeNew": 1400,
+          "excellent": 1200,
+          "good": 1000
+        },
+        "2016": {
+          "likeNew": 1300,
+          "excellent": 1100,
+          "good": 900
+        },
+        "2015": {
+          "likeNew": 1200,
+          "excellent": 1000,
+          "good": 800
+        },
+        "2014": {
+          "likeNew": 1100,
+          "excellent": 900,
+          "good": 700
+        },
+        "2013": {
+          "likeNew": 1050,
+          "excellent": 850,
+          "good": 650
+        },
+        "2012": {
+          "likeNew": 1000,
+          "excellent": 800,
+          "good": 600
+        },
+        "2011": {
+          "likeNew": 950,
+          "excellent": 750,
+          "good": 550
+        },
+        "2010": {
+          "likeNew": 900,
+          "excellent": 700,
+          "good": 500
+        },
+        "2009": {
+          "likeNew": 850,
+          "excellent": 650,
+          "good": 450
+        },
+        "2008": {
+          "likeNew": 800,
+          "excellent": 600,
+          "good": 400
+        },
+        "2007": {
+          "likeNew": 750,
+          "excellent": 550,
+          "good": 350
+        },
+        "2006": {
+          "likeNew": 700,
+          "excellent": 500,
+          "good": 300
+        },
+        "2003": {
+          "likeNew": 650,
+          "excellent": 450,
+          "good": 250
+        },
+        "2004": {
+          "likeNew": 600,
+          "excellent": 400,
+          "good": 200
+        }
+      }
+    },
+    "group_b": {
+      "brands": [
+        "Amerigo",
+        "Equipe",
+        "Tad Coffin",
+        "Hermes",
+        "Prestige",
+        "Childeric"
+      ],
+      "sellingByYear": {
+        "2026": {
+          "likeNew": 3790,
+          "excellent": 3590,
+          "good": 3290
+        },
+        "2025": {
+          "likeNew": 3640,
+          "excellent": 3440,
+          "good": 3090
+        },
+        "2024": {
+          "likeNew": 3490,
+          "excellent": 3290,
+          "good": 2890
+        },
+        "2023": {
+          "likeNew": 3090,
+          "excellent": 2890,
+          "good": 2490
+        },
+        "2022": {
+          "likeNew": 2890,
+          "excellent": 2690,
+          "good": 2390
+        },
+        "2021": {
+          "likeNew": 2690,
+          "excellent": 2490,
+          "good": 2190
+        },
+        "2020": {
+          "likeNew": 2490,
+          "excellent": 2290,
+          "good": 2090
+        },
+        "2019": {
+          "likeNew": 2390,
+          "excellent": 2190,
+          "good": 1990
+        },
+        "2018": {
+          "likeNew": 2290,
+          "excellent": 2090,
+          "good": 1890
+        },
+        "2017": {
+          "likeNew": 2190,
+          "excellent": 1990,
+          "good": 1790
+        },
+        "2016": {
+          "likeNew": 2090,
+          "excellent": 1890,
+          "good": 1690
+        },
+        "2015": {
+          "likeNew": 1990,
+          "excellent": 1790,
+          "good": 1590
+        },
+        "2014": {
+          "likeNew": 1890,
+          "excellent": 1690,
+          "good": 1490
+        },
+        "2013": {
+          "likeNew": 1790,
+          "excellent": 1590,
+          "good": 1390
+        },
+        "2012": {
+          "likeNew": 1690,
+          "excellent": 1490,
+          "good": 1290
+        },
+        "2011": {
+          "likeNew": 1590,
+          "excellent": 1390,
+          "good": 1190
+        },
+        "2010": {
+          "likeNew": 1490,
+          "excellent": 1290,
+          "good": 1090
+        },
+        "2009": {
+          "likeNew": 1390,
+          "excellent": 1190,
+          "good": 990
+        },
+        "2008": {
+          "likeNew": 1290,
+          "excellent": 1090,
+          "good": 890
+        },
+        "2007": {
+          "likeNew": 1190,
+          "excellent": 990,
+          "good": 790
+        },
+        "2006": {
+          "likeNew": 1090,
+          "excellent": 890,
+          "good": 690
+        },
+        "2003": {
+          "likeNew": 990,
+          "excellent": 790,
+          "good": 590
+        },
+        "2004": {
+          "likeNew": 890,
+          "excellent": 690,
+          "good": 490
+        }
+      },
+      "tradeInByYearInternal": {
+        "2026": {
+          "likeNew": 1800,
+          "excellent": 1700,
+          "good": 1500
+        },
+        "2025": {
+          "likeNew": 1600,
+          "excellent": 1500,
+          "good": 1300
+        },
+        "2024": {
+          "likeNew": 1400,
+          "excellent": 1300,
+          "good": 1100
+        },
+        "2023": {
+          "likeNew": 1300,
+          "excellent": 1200,
+          "good": 1050
+        },
+        "2022": {
+          "likeNew": 1200,
+          "excellent": 1100,
+          "good": 1000
+        },
+        "2021": {
+          "likeNew": 1100,
+          "excellent": 1000,
+          "good": 900
+        },
+        "2020": {
+          "likeNew": 1050,
+          "excellent": 950,
+          "good": 850
+        },
+        "2019": {
+          "likeNew": 1000,
+          "excellent": 900,
+          "good": 800
+        },
+        "2018": {
+          "likeNew": 950,
+          "excellent": 850,
+          "good": 750
+        },
+        "2017": {
+          "likeNew": 900,
+          "excellent": 800,
+          "good": 700
+        },
+        "2016": {
+          "likeNew": 250,
+          "excellent": 750,
+          "good": 650
+        },
+        "2015": {
+          "likeNew": 800,
+          "excellent": 700,
+          "good": 600
+        },
+        "2014": {
+          "likeNew": 750,
+          "excellent": 350,
+          "good": 550
+        },
+        "2013": {
+          "likeNew": 700,
+          "excellent": 600,
+          "good": 500
+        },
+        "2012": {
+          "likeNew": 650,
+          "excellent": 550,
+          "good": 450
+        },
+        "2011": {
+          "likeNew": 600,
+          "excellent": 500,
+          "good": 400
+        },
+        "2010": {
+          "likeNew": 550,
+          "excellent": 450,
+          "good": 350
+        },
+        "2009": {
+          "likeNew": 500,
+          "excellent": 400,
+          "good": 300
+        },
+        "2008": {
+          "likeNew": 450,
+          "excellent": 350,
+          "good": 250
+        },
+        "2007": {
+          "likeNew": 400,
+          "excellent": 300,
+          "good": 200
+        },
+        "2006": {
+          "likeNew": 350,
+          "excellent": 250,
+          "good": 150
+        },
+        "2003": {
+          "likeNew": 300,
+          "excellent": 200,
+          "good": 100
+        },
+        "2004": {
+          "likeNew": 250,
+          "excellent": 150,
+          "good": 50
+        }
+      }
+    },
+    "voltaire_elegance": {
+      "brands": [
+        "Voltaire",
+        "Voltaire Design"
+      ],
+      "line": "Elegance",
+      "namedModelDefault": true,
+      "sellingByYear": {
+        "2026": {
+          "likeNew": 8900,
+          "excellent": 7900,
+          "good": 6300
+        },
+        "2025": {
+          "likeNew": 7900,
+          "excellent": 7400,
+          "good": 5900
+        },
+        "2024": {
+          "likeNew": 7400,
+          "excellent": 6800,
+          "good": 5600
+        },
+        "2023": {
+          "likeNew": 6200,
+          "excellent": 5600,
+          "good": 4800
+        },
+        "2022": {
+          "likeNew": 5500,
+          "excellent": 4950,
+          "good": 4250
+        },
+        "2021": {
+          "likeNew": 5100,
+          "excellent": 4600,
+          "good": 3950
+        },
+        "2020": {
+          "likeNew": 4700,
+          "excellent": 4200,
+          "good": 3650
+        },
+        "2019": {
+          "likeNew": 4300,
+          "excellent": 3850,
+          "good": 3350
+        },
+        "2018": {
+          "likeNew": 3900,
+          "excellent": 3500,
+          "good": 3050
+        },
+        "2017": {
+          "likeNew": 3500,
+          "excellent": 3100,
+          "good": 2750
+        },
+        "2016": {
+          "likeNew": 3200,
+          "excellent": 2800,
+          "good": 2550
+        },
+        "2015": {
+          "likeNew": 3050,
+          "excellent": 2650,
+          "good": 2400
+        },
+        "2014": {
+          "likeNew": 2900,
+          "excellent": 2500,
+          "good": 2300
+        },
+        "2013": {
+          "likeNew": 2750,
+          "excellent": 2350,
+          "good": 2200
+        },
+        "2012": {
+          "likeNew": 2650,
+          "excellent": 2300,
+          "good": 2100
+        },
+        "2011": {
+          "likeNew": 2550,
+          "excellent": 2200,
+          "good": 2050
+        }
+      },
+      "tradeInByYearInternal": {
+        "2026": {
+          "likeNew": 6000,
+          "excellent": 5300,
+          "good": 4300
+        },
+        "2025": {
+          "likeNew": 4700,
+          "excellent": 4400,
+          "good": 3500
+        },
+        "2024": {
+          "likeNew": 3900,
+          "excellent": 3700,
+          "good": 2900
+        },
+        "2023": {
+          "likeNew": 3200,
+          "excellent": 3000,
+          "good": 2400
+        },
+        "2022": {
+          "likeNew": 3000,
+          "excellent": 2800,
+          "good": 2250
+        },
+        "2021": {
+          "likeNew": 2690,
+          "excellent": 2520,
+          "good": 2010
+        },
+        "2020": {
+          "likeNew": 2290,
+          "excellent": 2150,
+          "good": 1710
+        },
+        "2019": {
+          "likeNew": 1980,
+          "excellent": 1850,
+          "good": 1480
+        },
+        "2018": {
+          "likeNew": 1820,
+          "excellent": 1700,
+          "good": 1360
+        },
+        "2017": {
+          "likeNew": 1660,
+          "excellent": 1550,
+          "good": 1240
+        },
+        "2016": {
+          "likeNew": 1500,
+          "excellent": 1410,
+          "good": 1120
+        },
+        "2015": {
+          "likeNew": 1420,
+          "excellent": 1330,
+          "good": 1060
+        },
+        "2014": {
+          "likeNew": 1340,
+          "excellent": 1260,
+          "good": 1000
+        },
+        "2013": {
+          "likeNew": 1260,
+          "excellent": 1180,
+          "good": 940
+        },
+        "2012": {
+          "likeNew": 1190,
+          "excellent": 1110,
+          "good": 890
+        },
+        "2011": {
+          "likeNew": 1110,
+          "excellent": 1040,
+          "good": 830
+        }
+      }
+    },
+    "voltaire_essential": {
+      "brands": [
+        "Voltaire",
+        "Voltaire Design"
+      ],
+      "line": "Essential",
+      "sellingByYear": {
+        "2023": {
+          "likeNew": 3700,
+          "good": 3500
+        },
+        "2022": {
+          "likeNew": 3200,
+          "good": 3100
+        },
+        "2021": {
+          "likeNew": 3100,
+          "good": 3000
+        }
+      },
+      "note": "Partial Essential sell rows from 2026 VD sheet; expand if workbook adds years"
+    },
+    "forestier": {
+      "brands": [
+        "Forestier"
+      ],
+      "sellingByYear": {
+        "2026": {
+          "likeNew": 8200,
+          "excellent": 7900,
+          "good": 6200
+        },
+        "2025": {
+          "likeNew": 7400,
+          "excellent": 7100,
+          "good": 5900
+        },
+        "2024": {
+          "likeNew": 7000,
+          "excellent": 6600,
+          "good": 5600
+        },
+        "2023": {
+          "likeNew": 5800,
+          "excellent": 5400,
+          "good": 4800
+        },
+        "2022": {
+          "likeNew": 5150,
+          "excellent": 4750,
+          "good": 4250
+        },
+        "2021": {
+          "likeNew": 4750,
+          "excellent": 4400,
+          "good": 3950
+        },
+        "2020": {
+          "likeNew": 4400,
+          "excellent": 4050,
+          "good": 3650
+        },
+        "2019": {
+          "likeNew": 4050,
+          "excellent": 3700,
+          "good": 3350
+        },
+        "2018": {
+          "likeNew": 3650,
+          "excellent": 3350,
+          "good": 3050
+        },
+        "2017": {
+          "likeNew": 3300,
+          "excellent": 3000,
+          "good": 2750
+        },
+        "2016": {
+          "likeNew": 3000,
+          "excellent": 2700,
+          "good": 2550
+        }
+      },
+      "tradeInByYearInternal": {
+        "2026": {
+          "likeNew": 5500,
+          "excellent": 5300,
+          "good": 4200
+        },
+        "2025": {
+          "likeNew": 4400,
+          "excellent": 4200,
+          "good": 3500
+        },
+        "2024": {
+          "likeNew": 3660,
+          "excellent": 3510,
+          "good": 2920
+        },
+        "2023": {
+          "likeNew": 3030,
+          "excellent": 2910,
+          "good": 2420
+        },
+        "2022": {
+          "likeNew": 2810,
+          "excellent": 2700,
+          "good": 2240
+        },
+        "2021": {
+          "likeNew": 2520,
+          "excellent": 2410,
+          "good": 2010
+        },
+        "2020": {
+          "likeNew": 2150,
+          "excellent": 2060,
+          "good": 1710
+        },
+        "2019": {
+          "likeNew": 1850,
+          "excellent": 1780,
+          "good": 1480
+        },
+        "2018": {
+          "likeNew": 1700,
+          "excellent": 1630,
+          "good": 1360
+        },
+        "2017": {
+          "likeNew": 1550,
+          "excellent": 1490,
+          "good": 1240
+        },
+        "2016": {
+          "likeNew": 1410,
+          "excellent": 1350,
+          "good": 1120
+        }
+      }
+    }
+  },
+  "brandResolve": {
+    "cwd": "group_a",
+    "antares": "group_a",
+    "butet": "group_a",
+    "devoucoux": "group_a",
+    "delgrange": "group_a",
+    "meyer": "group_a",
+    "arion": "group_a",
+    "amerigo": "group_b",
+    "equipe": "group_b",
+    "tad coffin": "group_b",
+    "hermes": "group_b",
+    "herm\u00e8s": "group_b",
+    "prestige": "group_b",
+    "childeric": "group_b",
+    "voltaire": "voltaire_elegance",
+    "voltaire design": "voltaire_elegance",
+    "forestier": "forestier"
+  },
+  "vdNamedModels": {
+    "stuttgart": {
+      "family": "voltaire_elegance",
+      "modelAssumption": "elegance_default"
+    }
+  }
+}

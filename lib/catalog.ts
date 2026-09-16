@@ -1,16 +1,23 @@
 export const BODY_ANGLES = [
+  { id: "side", label: "Side", required: true },
+  { id: "other", label: "Other side", required: true },
+  { id: "seat", label: "Seat", required: true },
   { id: "panels", label: "Panels", required: true },
-  { id: "flaps", label: "Flaps", required: true },
-  { id: "underflaps", label: "Underflaps", required: true },
   { id: "billets", label: "Billets", required: true },
-  { id: "front", label: "Front", required: true },
-  { id: "back", label: "Back", required: true },
+] as const;
+
+export const OPTIONAL_ANGLES = [
+  { id: "flaps", label: "Flaps", required: false },
+  { id: "underflaps", label: "Underflaps", required: false },
+  { id: "front", label: "Front", required: false },
+  { id: "back", label: "Back", required: false },
+  { id: "damage", label: "Damage", required: false },
 ] as const;
 
 export const INTAKE_ANGLES = [
   ...BODY_ANGLES,
-  { id: "serial", label: "Serial / stamp", required: true },
-  { id: "damage", label: "Damage (if any)", required: false },
+  { id: "serial", label: "Serial", required: true },
+  ...OPTIONAL_ANGLES,
 ] as const;
 
 export type PhotoAngleId = (typeof INTAKE_ANGLES)[number]["id"];
@@ -46,12 +53,45 @@ export const PATH_INTERESTS = [
 export type PathInterestId = (typeof PATH_INTERESTS)[number]["id"];
 
 export const CONDITIONS = [
+  "Like New",
   "Excellent",
   "Very good",
   "Good",
   "Fair",
   "Needs work",
 ] as const;
+
+export const SELL_COPY = {
+  headline: "Sell Your Saddle",
+  beat1: "Upload photos.",
+  beat2: "We write the listing.",
+  beat3: "You review & send.",
+  time: "Takes less than five minutes.",
+  begin: "Begin",
+  continue: "Continue",
+  cta: "Submit",
+  skip: "Skip",
+  back: "Back",
+  takePhoto: "Take photo",
+  fromLibrary: "Choose from library",
+  fromFiles: "Choose from files",
+  done: "Sent",
+  collection: "Collection",
+  feeLine: "12% on sale · you keep ~88%",
+  policy: "Payout 7–10 days · 3-day return · $100 restock",
+  demoBanner: "Demo — not submitted to approval queue",
+  verifiedTitle: "Make it Verified",
+  verifiedBeat1: "We inspect it in person.",
+  verifiedBeat2: "We warehouse it at South Bay Stables.",
+  verifiedBeat3: "We film a short promo for the listing.",
+  verifiedBody1:
+    "For $150 (non-refundable), ship your saddle to us. Jeff checks tree, leather, billets, and wear. If it passes, we store it, finish the listing, and shoot a promo video for the site and social.",
+  verifiedBody2:
+    "If it doesn’t pass, you keep the photos of what we found — the $150 stays applied, and we pay to ship the saddle back to you.",
+  verifiedCta: "Continue with Verified · $150",
+  verifiedSkip: "List without Verified",
+  verifiedMicro: "Includes FedEx label to South Bay Stables.",
+} as const;
 
 export type Condition = (typeof CONDITIONS)[number];
 
@@ -114,12 +154,18 @@ export type IntakeDraft = {
   tree: string;
   stamps: string;
   serial: string;
+  panel: string;
+  blocks: string;
   condition: Condition | "";
   wear: string;
   serviceHistory: string;
   priceExpectation: string;
+  description: string;
   pathInterest: PathInterestId | "";
   photos: Partial<Record<PhotoAngleId, PhotoThumb>>;
+  morePhotos: PhotoThumb[];
+  needsJeffReview: boolean;
+  priceFlags: string[];
 };
 
 export type QueueSubmission = IntakeDraft & {
@@ -140,7 +186,7 @@ export type QueueSubmission = IntakeDraft & {
   returnZip?: string;
 };
 
-export const MIN_BODY_PHOTOS = 6;
+export const MIN_BODY_PHOTOS = 5;
 export const MIN_PHOTOS = 6;
 export const VERIFICATION_FEE_USD = 150;
 
@@ -154,7 +200,8 @@ export function bodyPhotoCount(photos: IntakeDraft["photos"]) {
 
 export function hasRequiredPhotos(photos: IntakeDraft["photos"]) {
   return (
-    Boolean(photos.serial?.thumb) && bodyPhotoCount(photos) >= MIN_BODY_PHOTOS
+    Boolean(photos.serial?.thumb) &&
+    BODY_ANGLES.every((angle) => Boolean(photos[angle.id]?.thumb))
   );
 }
 
