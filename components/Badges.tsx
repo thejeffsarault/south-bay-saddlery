@@ -3,11 +3,9 @@ export function ListingBadges({
   selfServe,
 }: {
   verified?: boolean;
-  southBaySelect?: boolean;
   selfServe?: boolean;
 }) {
-  if (selfServe) return null;
-  if (!verified) return null;
+  if (selfServe || !verified) return null;
   return (
     <div className="sbs-badge-row">
       <span className="sbs-badge">Verified</span>

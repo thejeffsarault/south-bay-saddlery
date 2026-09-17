@@ -6,6 +6,7 @@ import { ListingBadges } from "@/components/Badges";
 import { BuyCta } from "@/components/BuyCta";
 import { ProductGallery } from "@/components/ProductGallery";
 import { SaddleCard } from "@/components/SaddleCard";
+import { VerifiedMeaning } from "@/components/VerifiedMeaning";
 import {
   FULFILLMENT_LINE,
   WEAR_MAX_CHARS,
@@ -45,6 +46,7 @@ export function DetailsView({ id }: { id: string }) {
           <ProductGallery
             labels={listing.photoLabels}
             photoSrcs={listing.photoSrcs}
+            verified={listing.verified}
           />
         </div>
 
@@ -58,9 +60,9 @@ export function DetailsView({ id }: { id: string }) {
             </p>
             <ListingBadges
               verified={listing.verified}
-              southBaySelect={listing.southBaySelect}
               selfServe={listing.route === "self-serve"}
             />
+            {listing.verified ? <VerifiedMeaning /> : null}
             <p className="text-[var(--sbs-text-meta)] text-sbs-muted">
               {conditionLine(listing)}
             </p>

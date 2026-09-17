@@ -36,7 +36,7 @@ export function ListingPhoto({
         src={src}
         alt={alt}
         draggable={false}
-        className={`h-full w-full ${contain ? "object-contain" : "object-cover"} object-center`}
+        className={`absolute inset-0 h-full w-full ${contain ? "object-contain" : "object-cover"} object-center`}
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : "auto"}
         onError={() => setFailed(true)}

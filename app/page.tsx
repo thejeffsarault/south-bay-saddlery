@@ -1,24 +1,21 @@
 import Link from "next/link";
 import { CollectionGrid } from "@/components/CollectionGrid";
+import { HeroCarousel } from "@/components/HeroCarousel";
+import { HomeSellBand } from "@/components/HomeSellBand";
+import { ReviewsSection } from "@/components/ReviewsSection";
 import { PUBLISHED_LISTINGS } from "@/lib/inventory";
+import { isReviewsDemo } from "@/lib/reviews";
 
-const HERO =
-  PUBLISHED_LISTINGS.find((listing) => listing.id === "ji-001") ??
-  PUBLISHED_LISTINGS[0];
-
-export default function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ demo?: string }>;
+}) {
+  const { demo } = await searchParams;
   return (
     <div>
       <section className="relative bg-sbs-white">
-        <div className="sbs-hero">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={HERO.heroSrc}
-            alt={HERO.name}
-            className="h-full w-full object-cover object-center"
-            fetchPriority="high"
-          />
-        </div>
+        <HeroCarousel seed={PUBLISHED_LISTINGS} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-sbs-white via-sbs-white/85 to-transparent">
           <div className="sbs-page-wide pointer-events-auto !pb-6 !pt-16">
             <h1
@@ -56,20 +53,9 @@ export default function HomePage() {
         Founder-reviewed · Verified available
       </p>
 
-      <section className="mt-[var(--sbs-space-7)] bg-sbs-black text-sbs-white">
-        <div className="mx-auto max-w-[var(--sbs-max)] px-[var(--sbs-page-pad-x)] py-[var(--sbs-space-7)] text-center md:px-[var(--sbs-page-pad-x-md)]">
-          <h2 className="font-serif text-3xl font-medium">Sell Your Saddle</h2>
-          <p className="mt-2 text-sm text-sbs-white/70">
-            List in minutes · founder review before live
-          </p>
-          <Link
-            href="/sell"
-            className="mt-6 inline-block bg-sbs-white px-5 py-3 text-sm tracking-wide text-sbs-black"
-          >
-            Sell Your Saddle
-          </Link>
-        </div>
-      </section>
+      <ReviewsSection demo={isReviewsDemo(demo)} />
+
+      <HomeSellBand />
     </div>
   );
 }

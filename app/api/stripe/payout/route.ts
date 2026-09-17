@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       listingId: order.listingId,
       amount: order.amount,
       status: "platform_retained",
-      detail: `Select/founder inventory ${order.listingId} — funds stay on the platform. No Connect transfer. Breakdown kept for the ledger.`,
+      detail: `Platform-owned inventory ${order.listingId} — funds stay on the platform. No Connect transfer. Breakdown kept for the ledger.`,
       stub: !stripeConfigured(),
     });
     return NextResponse.json({

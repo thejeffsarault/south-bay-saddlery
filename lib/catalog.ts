@@ -122,7 +122,6 @@ export type PublicListing = {
   wear: string;
   price: number;
   verified: boolean;
-  southBaySelect: boolean;
   includesCover: boolean;
   published: true;
   discipline: "English";
@@ -173,7 +172,6 @@ export type QueueSubmission = IntakeDraft & {
   submittedAt: string;
   status: QueueStatus;
   founderPrice: string;
-  southBaySelect: boolean;
   publishedListingId: string | null;
   notifiedAt: string | null;
   notifyChannel: "webhook" | "email-stub" | null;
@@ -285,4 +283,18 @@ export function listingPhotos(folder: string) {
     photoLabels,
     heroSrc: photoSrcs["near-side"],
   };
+}
+
+/** Home hero: Verified in-stock only. Cap 6. Under 2 → single still. */
+export const HERO_CAROUSEL_MAX = 6;
+
+export function selectHeroListings(listings: PublicListing[]): PublicListing[] {
+  const verified = listings.filter(
+    (listing) => listing.published && listing.verified && listing.heroSrc,
+  );
+  const top = verified.slice(0, HERO_CAROUSEL_MAX);
+  if (top.length >= 2) return top;
+  if (top.length === 1) return top;
+  const fallback = listings.find((listing) => listing.published && listing.heroSrc);
+  return fallback ? [fallback] : [];
 }

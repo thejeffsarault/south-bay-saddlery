@@ -149,8 +149,27 @@ textarea {
 
 body:has(.sbs-sell) vercel-live-feedback,
 body:has(.sbs-sell) [data-vercel-toolbar],
-body:has(.sbs-sell) #vercel-live-feedback {
+body:has(.sbs-sell) #vercel-live-feedback,
+html.sbs-sell-band-inview vercel-live-feedback,
+html.sbs-sell-band-inview [data-vercel-toolbar],
+html.sbs-sell-band-inview #vercel-live-feedback {
   display: none !important;
+}
+
+.sbs-home-sell-inner {
+  margin-inline: auto;
+  max-width: var(--sbs-max);
+  padding: var(--sbs-space-7) var(--sbs-page-pad-x);
+  /* Extra floor so a preview FAB cannot sit on the CTA. */
+  padding-bottom: calc(var(--sbs-space-7) + 3.25rem);
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .sbs-home-sell-inner {
+    padding-inline: var(--sbs-page-pad-x-md);
+    padding-bottom: calc(var(--sbs-space-7) + 1.5rem);
+  }
 }
 
 .sbs-page {
@@ -173,6 +192,91 @@ body:has(.sbs-sell) #vercel-live-feedback {
   width: 100%;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: var(--sbs-space-3);
+  align-items: start;
+}
+
+.sbs-collection-grid > * {
+  min-width: 0;
+}
+
+/* Jeff lock: equal 4:5 frames, contain, white ground. Intrinsic size cannot drive height. */
+.sbs-card-frame {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--sbs-white);
+}
+
+.sbs-card-frame img {
+  object-fit: contain;
+  object-position: center;
+}
+
+.sbs-verified-mark-slot {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sbs-verified-mark-details {
+  pointer-events: none;
+}
+
+.sbs-verified-tip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  width: max-content;
+  max-width: 11.5rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--sbs-border);
+  background: var(--sbs-white);
+  color: var(--sbs-ink);
+  font-size: var(--sbs-text-badge);
+  line-height: 1.35;
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sbs-verified-mark-card:hover .sbs-verified-tip,
+.sbs-verified-mark-card:focus-visible .sbs-verified-tip,
+.sbs-verified-tip.is-open {
+  opacity: 1;
+}
+
+.sbs-verified-mark-card {
+  width: 32px;
+  height: 32px;
+}
+
+.sbs-verified-mark-details {
+  width: 40px;
+  height: 40px;
+}
+
+.sbs-verified-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (min-width: 640px) {
+  .sbs-verified-mark-card {
+    width: 40px;
+    height: 40px;
+  }
+
+  .sbs-verified-mark-details {
+    width: 48px;
+    height: 48px;
+  }
 }
 
 .sbs-gallery-root {
@@ -280,9 +384,268 @@ body:has(.sbs-sell) #vercel-live-feedback {
 }
 
 .sbs-hero {
+  position: relative;
   height: calc(100dvh - 3.25rem);
   min-height: 28rem;
   background: var(--sbs-white);
+}
+
+.sbs-hero > a,
+.sbs-hero > a figure,
+.sbs-hero > a img {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.sbs-hero-stage {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.sbs-hero-stage .sbs-gallery-track {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  align-items: stretch;
+}
+
+.sbs-hero-slide {
+  position: relative;
+  height: 100%;
+  min-height: 100%;
+}
+
+.sbs-hero-slide a {
+  position: relative;
+  display: block;
+  height: 100%;
+}
+
+.sbs-hero-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.sbs-hero-edge {
+  position: absolute;
+  top: 50%;
+  z-index: 4;
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  transform: translateY(-50%);
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.4);
+  color: rgba(26, 26, 26, 0.42);
+  cursor: pointer;
+}
+
+.sbs-hero-edge-prev {
+  left: 0.4rem;
+}
+
+.sbs-hero-edge-next {
+  right: 0.4rem;
+}
+
+.sbs-hero-edge:hover,
+.sbs-hero-edge:focus-visible {
+  background: rgba(255, 255, 255, 0.62);
+  color: rgba(26, 26, 26, 0.7);
+}
+
+.sbs-hero-edge:focus-visible {
+  outline: 1px solid rgba(26, 26, 26, 0.35);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sbs-hero-edge-prev {
+    opacity: 0;
+    transition: opacity 220ms ease;
+  }
+
+  .sbs-hero-stage:hover .sbs-hero-edge-prev,
+  .sbs-hero-stage:focus-within .sbs-hero-edge-prev {
+    opacity: 1;
+  }
+}
+
+.sbs-reviews {
+  margin-inline: auto;
+  width: 100%;
+  max-width: var(--sbs-max);
+  padding: var(--sbs-space-8) var(--sbs-page-pad-x);
+}
+
+.sbs-reviews-head {
+  margin-bottom: var(--sbs-space-6);
+  text-align: center;
+}
+
+.sbs-reviews-title {
+  font-family: var(--sbs-font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--sbs-text);
+}
+
+.sbs-reviews-demo {
+  margin-top: 0.65rem;
+  font-size: var(--sbs-text-meta);
+  letter-spacing: 0.04em;
+  color: var(--sbs-muted);
+}
+
+.sbs-reviews-desktop {
+  display: none;
+}
+
+.sbs-reviews-mobile {
+  display: block;
+}
+
+.sbs-reviews-stage {
+  position: relative;
+  padding-inline: 2rem;
+}
+
+.sbs-review-card {
+  min-height: 13.5rem;
+  padding: 2rem 1.5rem 1.75rem;
+  border: 1px solid var(--sbs-border);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.sbs-review-ghost {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.sbs-review-mark {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-family: var(--sbs-font-display);
+  font-size: 1.75rem;
+  line-height: 1;
+  color: rgba(26, 26, 26, 0.22);
+}
+
+.sbs-review-slot {
+  height: 0.55rem;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.sbs-review-slot-quote {
+  width: 100%;
+}
+
+.sbs-review-slot-mid {
+  width: 72%;
+}
+
+.sbs-review-slot-name {
+  width: 34%;
+  margin-top: 0.85rem;
+}
+
+.sbs-review-quote {
+  margin: 0;
+}
+
+.sbs-review-quote p {
+  font-family: var(--sbs-font-display);
+  font-size: 1.2rem;
+  line-height: 1.45;
+  color: var(--sbs-text);
+}
+
+.sbs-review-name {
+  display: block;
+  margin-top: 1.25rem;
+  font-style: normal;
+  font-size: var(--sbs-text-body);
+  color: var(--sbs-ink);
+}
+
+.sbs-review-meta {
+  margin-top: 0.2rem;
+  font-size: var(--sbs-text-meta);
+  color: var(--sbs-muted);
+}
+
+.sbs-reviews-edge {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: flex;
+  height: 1.75rem;
+  width: 1.75rem;
+  transform: translateY(-50%);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(26, 26, 26, 0.16);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(26, 26, 26, 0.4);
+  cursor: pointer;
+}
+
+.sbs-reviews-edge-prev {
+  left: 0;
+}
+
+.sbs-reviews-edge-next {
+  right: 0;
+}
+
+.sbs-reviews-edge:hover,
+.sbs-reviews-edge:focus-visible {
+  color: rgba(26, 26, 26, 0.7);
+}
+
+.sbs-reviews-edge:focus-visible {
+  outline: 1px solid rgba(26, 26, 26, 0.35);
+  outline-offset: 2px;
+}
+
+.sbs-reviews-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+  padding-top: 1.1rem;
+}
+
+.sbs-reviews-dot {
+  height: 5px;
+  width: 5px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(26, 26, 26, 0.16);
+  cursor: pointer;
+}
+
+.sbs-reviews-dot[aria-current="true"] {
+  background: rgba(26, 26, 26, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sbs-hero-stage .sbs-gallery-track {
+    transition: none;
+  }
 }
 
 @media (min-width: 640px) {
@@ -291,8 +654,26 @@ body:has(.sbs-sell) #vercel-live-feedback {
     padding-inline: var(--sbs-page-pad-x-md);
   }
 
+  .sbs-reviews {
+    padding-inline: var(--sbs-page-pad-x-md);
+  }
+
   .sbs-collection-grid {
     gap: var(--sbs-space-4);
+  }
+}
+
+@media (min-width: 768px) {
+  .sbs-reviews-desktop {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2.75rem;
+    max-width: 56rem;
+    margin-inline: auto;
+  }
+
+  .sbs-reviews-mobile {
+    display: none;
   }
 }
 

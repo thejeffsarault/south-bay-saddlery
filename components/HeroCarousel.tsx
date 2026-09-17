@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { shotLabel } from "@/lib/catalog";
-import { ListingPhoto } from "./ListingPhoto";
-import { VerifiedMarkOverlay } from "./VerifiedMark";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { selectHeroListings, type PublicListing } from "@/lib/catalog";
+import { useStore } from "@/lib/store";
 
 function Chevron({ dir }: { dir: "prev" | "next" }) {
   return (
@@ -13,7 +13,7 @@ function Chevron({ dir }: { dir: "prev" | "next" }) {
       className="h-5 w-5"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="1.4"
     >
       {dir === "prev" ? (
         <path d="M15 5 L8 12 L15 19" />
@@ -34,63 +34,71 @@ type DragSession = {
   unbind: () => void;
 };
 
-export function ProductGallery({
-  labels,
-  photoSrcs,
-  videoSrc,
-  verified = false,
+function HeroPhoto({
+  listing,
+  priority = false,
 }: {
-  labels: string[];
-  photoSrcs?: Record<string, string>;
-  videoSrc?: string;
-  verified?: boolean;
+  listing: PublicListing;
+  priority?: boolean;
 }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={listing.heroSrc}
+      alt={listing.name}
+      className="sbs-hero-photo"
+      draggable={false}
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : "auto"}
+    />
+  );
+}
+
+function HeroStill({ listing, priority }: { listing: PublicListing; priority?: boolean }) {
+  return (
+    <Link
+      href={`/collection/${listing.id}`}
+      className="block h-full w-full"
+      aria-label={`${listing.name} details`}
+    >
+      <HeroPhoto listing={listing} priority={priority} />
+    </Link>
+  );
+}
+
+export function HeroCarousel({ seed }: { seed: PublicListing[] }) {
+  const { listings, ready } = useStore();
+  const slides = selectHeroListings(ready ? listings : seed);
+
   const stage = useRef<HTMLDivElement>(null);
-  const thumbs = useRef<HTMLDivElement>(null);
   const drag = useRef<DragSession | null>(null);
+  const suppressClick = useRef(false);
   const indexRef = useRef(0);
   const [index, setIndex] = useState(0);
   const [width, setWidth] = useState(0);
   const [offsetX, setOffsetX] = useState(0);
 
-  const media = useMemo(() => {
-    const items: Array<{
-      key: string;
-      type: "image" | "video";
-      src?: string;
-      alt: string;
-    }> = labels.map((label) => ({
-      key: label,
-      type: "image",
-      src: photoSrcs?.[label],
-      alt: shotLabel(label),
-    }));
-
-    if (videoSrc) {
-      items.splice(1, 0, {
-        key: "promo",
-        type: "video",
-        src: videoSrc,
-        alt: "Showroom",
-      });
-    }
-
-    return items;
-  }, [labels, photoSrcs, videoSrc]);
-
-  const mediaCount = media.length;
+  const slideCount = slides.length;
   indexRef.current = index;
+  const pauseHold = useRef(false);
+  const [paused, setPaused] = useState(false);
 
   const goTo = useCallback(
     (next: number) => {
-      if (mediaCount === 0) return;
-      const clamped = ((next % mediaCount) + mediaCount) % mediaCount;
+      if (slideCount < 2) return;
+      const clamped = ((next % slideCount) + slideCount) % slideCount;
       indexRef.current = clamped;
       setOffsetX(0);
       setIndex(clamped);
     },
-    [mediaCount],
+    [slideCount],
   );
+
+  useEffect(() => {
+    if (index >= slideCount && slideCount > 0) {
+      goTo(0);
+    }
+  }, [goTo, index, slideCount]);
 
   useEffect(() => {
     const el = stage.current;
@@ -100,9 +108,10 @@ export function ProductGallery({
     const observer = new ResizeObserver(sync);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [slideCount]);
 
   useEffect(() => {
+    if (slideCount < 2) return;
     function onKey(event: KeyboardEvent) {
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
       const target = event.target;
@@ -122,18 +131,25 @@ export function ProductGallery({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [goTo]);
-
-  useEffect(() => {
-    const active = thumbs.current?.querySelector<HTMLElement>(
-      `[data-gallery-thumb="${index}"]`,
-    );
-    active?.scrollIntoView({ inline: "nearest", block: "nearest" });
-  }, [index]);
+  }, [goTo, slideCount]);
 
   useEffect(() => {
     return () => drag.current?.unbind();
   }, []);
+
+  useEffect(() => {
+    if (slideCount < 2 || paused) return;
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+    const id = window.setInterval(() => {
+      if (!pauseHold.current) goTo(indexRef.current + 1);
+    }, 7000);
+    return () => window.clearInterval(id);
+  }, [goTo, paused, slideCount]);
 
   function finishGesture(clientX: number) {
     const session = drag.current;
@@ -147,17 +163,19 @@ export function ProductGallery({
     setOffsetX(0);
     if (axis === "v") return;
     if (dragged) {
+      suppressClick.current = true;
+      setPaused(true);
       const stageWidth = stage.current?.clientWidth || width || 320;
       const threshold = Math.max(28, stageWidth * 0.1);
       if (dx <= -threshold) goTo(indexRef.current + 1);
       else if (dx >= threshold) goTo(indexRef.current - 1);
-      return;
     }
-    goTo(indexRef.current + 1);
   }
 
   function startGesture(startX: number, startY: number) {
     drag.current?.unbind();
+    suppressClick.current = false;
+    pauseHold.current = true;
 
     const onMove = (clientX: number, clientY: number) => {
       const session = drag.current;
@@ -225,124 +243,91 @@ export function ProductGallery({
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (event.pointerType === "mouse" && event.button !== 0) return;
-    event.preventDefault();
+    if ((event.target as HTMLElement).closest("button")) return;
     startGesture(event.clientX, event.clientY);
   }
 
-  if (media.length === 0) {
-    return <ListingPhoto alt="Showroom" className="aspect-[4/5] w-full" />;
+  const listing = slides[0];
+  if (!listing) return null;
+
+  if (slideCount < 2) {
+    return (
+      <div className="sbs-hero">
+        <HeroStill listing={listing} priority />
+      </div>
+    );
   }
 
-  const canNav = media.length > 1;
   const slideWidth = width || 1;
   const trackX = -index * slideWidth + offsetX;
   const dragging = offsetX !== 0;
 
   return (
-    <div className="sbs-gallery-root min-w-0 w-full">
-      <div className="sbs-gallery-stage" ref={stage}>
+    <div className="sbs-hero">
+      <div
+        className="sbs-gallery-stage sbs-hero-stage"
+        ref={stage}
+        onPointerEnter={() => {
+          pauseHold.current = true;
+        }}
+        onPointerLeave={() => {
+          pauseHold.current = false;
+        }}
+      >
         <div
           className={`sbs-gallery-track${dragging ? " is-dragging" : ""}`}
           style={{ transform: `translate3d(${trackX}px, 0, 0)` }}
           onPointerDown={onPointerDown}
           onDragStart={(event) => event.preventDefault()}
           aria-roledescription="carousel"
-          aria-label="Showroom photos"
+          aria-label="Verified saddles in stock"
         >
-          {media.map((item, itemIndex) => (
-            <div key={item.key} className="sbs-gallery-slide">
-              {item.type === "video" && item.src ? (
-                <video
-                  src={item.src}
-                  muted
-                  autoPlay
-                  playsInline
-                  loop
-                  draggable={false}
-                  className="aspect-[4/5] w-full bg-sbs-white object-contain"
-                />
-              ) : (
-                <ListingPhoto
-                  src={item.src}
-                  alt={item.alt}
-                  className="aspect-[4/5] w-full bg-sbs-white"
-                  contain
-                  priority={itemIndex === 0}
-                />
-              )}
+          {slides.map((slide, slideIndex) => (
+            <div key={slide.id} className="sbs-gallery-slide sbs-hero-slide">
+              <Link
+                href={`/collection/${slide.id}`}
+                className="block h-full w-full"
+                aria-label={`${slide.name} details`}
+                draggable={false}
+                onClick={(event) => {
+                  if (suppressClick.current) {
+                    event.preventDefault();
+                    suppressClick.current = false;
+                  }
+                }}
+              >
+                <HeroPhoto listing={slide} priority={slideIndex === 0} />
+              </Link>
             </div>
           ))}
         </div>
-        {canNav ? (
-          <>
-            <button
-              type="button"
-              className="sbs-gallery-arrow sbs-gallery-arrow-prev"
-              aria-label="Previous photo"
-              onClick={(event) => {
-                event.stopPropagation();
-                goTo(index - 1);
-              }}
-              onPointerDown={(event) => event.stopPropagation()}
-            >
-              <Chevron dir="prev" />
-            </button>
-            <button
-              type="button"
-              className="sbs-gallery-arrow sbs-gallery-arrow-next"
-              aria-label="Next photo"
-              onClick={(event) => {
-                event.stopPropagation();
-                goTo(index + 1);
-              }}
-              onPointerDown={(event) => event.stopPropagation()}
-            >
-              <Chevron dir="next" />
-            </button>
-          </>
-        ) : null}
-        {verified ? <VerifiedMarkOverlay surface="details" /> : null}
+        <button
+          type="button"
+          className="sbs-hero-edge sbs-hero-edge-prev"
+          aria-label="Previous saddle"
+          onClick={(event) => {
+            event.stopPropagation();
+            setPaused(true);
+            goTo(index - 1);
+          }}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <Chevron dir="prev" />
+        </button>
+        <button
+          type="button"
+          className="sbs-hero-edge sbs-hero-edge-next"
+          aria-label="Next saddle"
+          onClick={(event) => {
+            event.stopPropagation();
+            setPaused(true);
+            goTo(index + 1);
+          }}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <Chevron dir="next" />
+        </button>
       </div>
-      {canNav ? (
-        <div
-          ref={thumbs}
-          className="sbs-gallery-thumbs"
-          aria-label="Showroom stills"
-        >
-          {media.map((item, itemIndex) => (
-            <button
-              key={item.key}
-              type="button"
-              data-gallery-thumb={itemIndex}
-              aria-label={`Show ${item.alt}`}
-              aria-current={itemIndex === index ? "true" : undefined}
-              className="sbs-gallery-thumb"
-              onClick={() => goTo(itemIndex)}
-            >
-              {item.type === "video" && item.src ? (
-                <span className="leather-plate relative block aspect-[4/5] w-full">
-                  <span className="sr-only">Video</span>
-                </span>
-              ) : (
-                <ListingPhoto
-                  src={item.src}
-                  alt=""
-                  className="aspect-[4/5] w-full"
-                  contain
-                />
-              )}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      {canNav ? (
-        <p
-          className="mt-2 text-center text-[var(--sbs-text-meta)] text-sbs-muted"
-          aria-live="polite"
-        >
-          {index + 1} / {media.length}
-        </p>
-      ) : null}
     </div>
   );
 }
