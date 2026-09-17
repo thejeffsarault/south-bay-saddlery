@@ -1,9 +1,16 @@
 import Link from "next/link";
 import { CollectionGrid } from "@/components/CollectionGrid";
 import { HeroCarousel } from "@/components/HeroCarousel";
+import { ReviewsSection } from "@/components/ReviewsSection";
 import { PUBLISHED_LISTINGS } from "@/lib/inventory";
+import { isReviewsDemo } from "@/lib/reviews";
 
-export default function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ demo?: string }>;
+}) {
+  const { demo } = await searchParams;
   return (
     <div>
       <section className="relative bg-sbs-white">
@@ -44,6 +51,8 @@ export default function HomePage() {
       <p className="px-[var(--sbs-page-pad-x)] text-center text-[var(--sbs-text-meta)] text-sbs-muted md:px-[var(--sbs-page-pad-x-md)]">
         Founder-reviewed · Verified available
       </p>
+
+      <ReviewsSection demo={isReviewsDemo(demo)} />
 
       <section className="mt-[var(--sbs-space-7)] bg-sbs-black text-sbs-white">
         <div className="mx-auto max-w-[var(--sbs-max)] px-[var(--sbs-page-pad-x)] py-[var(--sbs-space-7)] text-center md:px-[var(--sbs-page-pad-x-md)]">
