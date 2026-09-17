@@ -149,8 +149,27 @@ textarea {
 
 body:has(.sbs-sell) vercel-live-feedback,
 body:has(.sbs-sell) [data-vercel-toolbar],
-body:has(.sbs-sell) #vercel-live-feedback {
+body:has(.sbs-sell) #vercel-live-feedback,
+html.sbs-sell-band-inview vercel-live-feedback,
+html.sbs-sell-band-inview [data-vercel-toolbar],
+html.sbs-sell-band-inview #vercel-live-feedback {
   display: none !important;
+}
+
+.sbs-home-sell-inner {
+  margin-inline: auto;
+  max-width: var(--sbs-max);
+  padding: var(--sbs-space-7) var(--sbs-page-pad-x);
+  /* Extra floor so a preview FAB cannot sit on the CTA. */
+  padding-bottom: calc(var(--sbs-space-7) + 3.25rem);
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .sbs-home-sell-inner {
+    padding-inline: var(--sbs-page-pad-x-md);
+    padding-bottom: calc(var(--sbs-space-7) + 1.5rem);
+  }
 }
 
 .sbs-page {

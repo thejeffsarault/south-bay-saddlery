@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CollectionGrid } from "@/components/CollectionGrid";
 import { HeroCarousel } from "@/components/HeroCarousel";
+import { HomeSellBand } from "@/components/HomeSellBand";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { PUBLISHED_LISTINGS } from "@/lib/inventory";
 import { isReviewsDemo } from "@/lib/reviews";
@@ -54,20 +55,7 @@ export default async function HomePage({
 
       <ReviewsSection demo={isReviewsDemo(demo)} />
 
-      <section className="mt-[var(--sbs-space-7)] bg-sbs-black text-sbs-white">
-        <div className="mx-auto max-w-[var(--sbs-max)] px-[var(--sbs-page-pad-x)] py-[var(--sbs-space-7)] text-center md:px-[var(--sbs-page-pad-x-md)]">
-          <h2 className="font-serif text-3xl font-medium">Sell Your Saddle</h2>
-          <p className="mt-2 text-sm text-sbs-white/70">
-            List in minutes · founder review before live
-          </p>
-          <Link
-            href="/sell"
-            className="mt-6 inline-block bg-sbs-white px-5 py-3 text-sm tracking-wide text-sbs-black"
-          >
-            Sell Your Saddle
-          </Link>
-        </div>
-      </section>
+      <HomeSellBand />
     </div>
   );
 }
